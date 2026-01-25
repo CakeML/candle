@@ -340,3 +340,9 @@ let CACHE_CONV =
               with Failure _ ->
                   let th = conv tm in
                   (net := enter [] (tm,ALPHA_HACK th) (!net); th);;
+
+(* ------------------------------------------------------------------------- *)
+(* A printer.                                                                *)
+(* ------------------------------------------------------------------------- *)
+
+let PRINT_TERM_CONV t = print_qterm t; Text_io.print "\n"; ALL_CONV t;;
