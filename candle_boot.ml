@@ -236,8 +236,8 @@ let trimRight str =
  * ------------------------------------------------------------------------- *)
 
 let isFile fname =
-  try let ins = Text_io.b_openIn fname in
-      Text_io.b_closeIn ins;
+  try let ins = Text_io.openIn fname in
+      Text_io.closeIn ins;
       true
   with Text_io.Bad_file_name -> false
 ;;
@@ -502,8 +502,9 @@ end;; (* struct *)
 module Cakeml = struct
 
 let loadPath = ref [Filename.currentDir];;
+let stdIn = Text_io.openStdIn ();;
 let (input1 : (unit -> char option) ref) =
-  ref (fun () -> Text_io.input1 Text_io.stdIn);;
+  ref (fun () -> Text_io.input1 stdIn);;
 
 let prompt1 = ref "# ";;
 let prompt2 = ref "  ";;
@@ -540,10 +541,10 @@ let () =
     let loadMsg s = print ("- Loading " ^ s ^ "\n") in
     let load_use fname =
       loadMsg fname;
-      Text_io.b_inputLinesFrom '\n' fname in
+      Text_io.inputLinesFile '\n' fname in
     let load fname =
       loadMsg fname;
-      match Text_io.b_inputLinesFrom '\n' fname with
+      match Text_io.inputLinesFile '\n' fname with
       | None -> None
       | Some lns ->
           begin
@@ -710,4 +711,3 @@ let () =
 ;;
 
 end;; (* struct *)
-
