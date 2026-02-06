@@ -89,10 +89,10 @@ let mk_eq =
 module Type = struct
   let rec compare ty1 ty2 =
     match ty1, ty2 with
-    | Tyvar x1, Tyvar x2 -> String.compare x1 x2
+    | Tyvar x1, Tyvar x2 -> Cake.String.compare x1 x2
     | Tyvar _, Tyapp _ -> Less
     | Tyapp (x1,a1), Tyapp (x2,a2) ->
-        Pair.compare String.compare (List.compare compare) (x1,a1) (x2,a2)
+        Cake.Pair.compare Cake.String.compare (Cake.List.compare compare) (x1,a1) (x2,a2)
     | Tyapp _, Tyvar _ -> Greater
   ;;
   let (<) ty1 ty2 = compare ty1 ty2 = Less
@@ -105,19 +105,19 @@ module Term = struct
   let rec compare t1 t2 =
     match t1, t2 with
     | Var (x1,ty1), Var (x2,ty2) ->
-        Pair.compare String.compare Type.compare (x1,ty1) (x2,ty2)
+        Cake.Pair.compare Cake.String.compare Type.compare (x1,ty1) (x2,ty2)
     | Var _, _ -> Less
     | Const (x1,ty1), Const (x2,ty2) ->
-        Pair.compare String.compare Type.compare (x1,ty1) (x2,ty2)
+        Cake.Pair.compare Cake.String.compare Type.compare (x1,ty1) (x2,ty2)
     | Const _, Var _ -> Greater
     | Const _, _ -> Less
     | Comb (s1,s2), Comb (t1,t2) ->
-        Pair.compare compare compare (s1,s2) (t1,t2)
+        Cake.Pair.compare compare compare (s1,s2) (t1,t2)
     | Comb _, Var _ -> Greater
     | Comb _, Const _ -> Greater
     | Comb _, Abs _ -> Less
     | Abs (s1,s2), Abs (t1,t2) ->
-        Pair.compare compare compare (s1,s2) (t1,t2)
+        Cake.Pair.compare compare compare (s1,s2) (t1,t2)
     | Abs _, _ -> Greater
   ;;
   let (<) t1 t2 = compare t1 t2 = Less
@@ -128,7 +128,7 @@ end;;
 
 module Thm = struct
   let compare th1 th2 =
-    Pair.compare (List.compare Term.compare) Term.compare
+    Cake.Pair.compare (Cake.List.compare Term.compare) Term.compare
                  (dest_thm th1)
                  (dest_thm th2)
   ;;
@@ -154,7 +154,7 @@ let rec ordav env x1 x2 =
 ;;
 
 let rec orda env t1 t2 =
-  if List.null env && t1 = t2 then Equal else
+  if Cake.List.null env && t1 = t2 then Equal else
     match t1, t2 with
     | Var (_,_), Var (_,_) -> ordav env t1 t2
     | Const (_,_), Const (_,_) -> Term.compare t1 t2
@@ -182,8 +182,8 @@ let alphaorder = orda []
 
 let aconv s t = alphaorder s t = Equal;;
 
-let tyvars t = List.map mk_vartype (tyvars t);;
-let type_vars_in_term t = List.map mk_vartype (type_vars_in_term t);;
+let tyvars t = Cake.List.map mk_vartype (tyvars t);;
+let type_vars_in_term t = Cake.List.map mk_vartype (type_vars_in_term t);;
 
 (* ------------------------------------------------------------------------- *)
 (* Comparison function on theorems. Currently the same as equality, but      *)
@@ -191,4 +191,3 @@ let type_vars_in_term t = List.map mk_vartype (type_vars_in_term t);;
 (* ------------------------------------------------------------------------- *)
 
 let equals_thm th th' = dest_thm th = dest_thm th';;
-

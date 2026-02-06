@@ -16,6 +16,16 @@ open Hol_loader;;
 *)
 
 (* ------------------------------------------------------------------------- *)
+(* Make it harder to accidentally use CakeML-specific code and add a         *)
+(* compatiblity layer.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+loads "candle_insulate.ml";;  (* Move most of CakeML to Cake module.         *)
+loads "candle_nums.ml";;      (* Load "num".                                 *)
+loads "candle_pretty.ml";;    (* Pretty printer code.                        *)
+loads "candle_ocaml.ml";;     (* OCaml modules.                              *)
+
+(* ------------------------------------------------------------------------- *)
 (* Bind these to names that are independent of OCaml versions before they    *)
 (* are potentially overwritten by an identifier of the same name. In older   *)
 (* and newer Ocaml versions these are respectively:                          *)
@@ -24,24 +34,22 @@ open Hol_loader;;
 (* Pervasives.abs_float -> Stdlib.abs_float / Float.abs                      *)
 (* ------------------------------------------------------------------------- *)
 
-let float_sqrt = Double.sqrt;;
-let float_fabs = Double.abs;;
+let float_sqrt = Float.sqrt;;
+let float_fabs = Float.abs;;
 
 (* ------------------------------------------------------------------------- *)
 (* Various tweaks to OCaml and general library functions.                    *)
 (* ------------------------------------------------------------------------- *)
 
-loads "system.ml";;      (* Set up proper parsing                            *)
-loads "candle_nums.ml";; (* Load "num"                                       *)
-loads "bignum_num.ml";;  (* Load bignums                                     *)
-loads "lib.ml";;         (* Various useful general library functions         *)
+loads "system.ml";;        (* Set up proper parsing                          *)
+loads "bignum_num.ml";;    (* Load bignums                                   *)
+loads "lib.ml";;           (* Various useful general library functions       *)
 
 (* ------------------------------------------------------------------------- *)
 (* Candle things.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 loads "candle_kernel.ml";;               (* Brings Candle kernel into scope. *)
-loads "candle_pretty.ml";;               (* Pretty printer code.             *)
 
 (* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)

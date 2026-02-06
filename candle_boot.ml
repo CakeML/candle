@@ -14,6 +14,7 @@ let (-.) = Double.(-);;
 let (+.) = Double.(+);;
 let ( *.) = Double.( * );;
 let (/.) = Double.(/);;
+let (~-) x = -x;;
 
 let failwith msg = raise (Failure msg);;
 
