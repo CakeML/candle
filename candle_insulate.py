@@ -24,7 +24,7 @@ IGNORED_BINDINGS = {
     'TextIO',  # shadowing this will break the REPL in strange ways
     'PrettyPrinter',  # shadowing this might break the REPL in strange ways
     'assert',  # parser issue
-    '~',  # parser issue (see below)
+    '~',  # parser issue
 }
 
 # Identifiers that are not symbols but still need to be parenthesized
