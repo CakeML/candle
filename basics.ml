@@ -451,6 +451,7 @@ let follow_path =
 (* Considering a term as a propositional formula and returning atoms.        *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let atoms =
   let rec atoms acc tm =
     match tm with
@@ -461,6 +462,6 @@ let atoms =
           atoms (atoms acc l) r
     | Comb(Const("~",_),l) -> atoms acc l
     | _ -> (tm |-> ()) acc in
-  let f = fun x y -> Equal in  (* HACK(daniel): Not sure whether this is ok. *)
   fun tm -> if type_of tm <> bool_ty then failwith "atoms: not Boolean"
-            else foldl (fun a x y -> x::a) [] (atoms (undefined f) tm);;
+            else foldl (fun a x y -> x::a) [] (atoms undefined tm);;
+*)
