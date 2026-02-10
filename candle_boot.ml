@@ -14,7 +14,14 @@ let (-.) = Double.(-);;
 let (+.) = Double.(+);;
 let ( *.) = Double.( * );;
 let (/.) = Double.(/);;
-let (~-) x = -x;;
+
+(* OCaml parser doesn't like ~, and the CakeML parser doesn't like ~- nor ~-. *)
+(*CML
+val negint = Int.~;
+val negfloat = Double.~;
+*)
+let (~-) x = negint x;;
+let (~-.) x = negfloat x;;
 
 let failwith msg = raise (Failure msg);;
 
