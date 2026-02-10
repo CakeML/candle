@@ -3,9 +3,14 @@
  * ------------------------------------------------------------------------- *)
 
 (* This is pointer equality, which is missing from CakeML.
-   || x = y is just to get the type variables right:
+   The way we want to implement this is by using (=) for mutable types such as
+   references, and false otherwise.
+   By defining (==) as follows, we get the correct behavior for reference types,
+   and type errors everywhere else. Those need to be manually fixed, using (=)
+   for mutable types, and false otherwise. The hope is that the type error
+   messages make this decision easier.
  *)
-let (==) x y = false || x = y;;
+let (==) x y = !x; !y; x = y
 
 let ref x = Ref x;;
 

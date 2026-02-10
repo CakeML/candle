@@ -215,15 +215,15 @@ let rec filter p l =
   match l with
     [] -> l
   | h::t -> let t' = filter p t in
-            if p(h) then if t'==t then l else h::t'
+            if p(h) then (* if t'==t then l else *) h::t'
             else t';;
 
 let rec partition p l =
   match l with
     [] -> [],l
   | h::t -> let yes,no = partition p t in
-            if p(h) then (if yes == t then l,[] else h::yes,no)
-            else (if no == t then [],l else yes,h::no);;
+            if p(h) then ((* if yes == t then l,[] else *) h::yes,no)
+            else ((* if no == t then [],l else *) yes,h::no);;
 
 let rec mapfilter f l =
   match l with
@@ -356,7 +356,7 @@ let rec uniq l =
   match l with
     x::(y::_ as t) -> let t' = uniq t in
                       if x = y then t' else
-                      if t'==t then l else x::t'
+                      (* if t'==t then l else *) x::t'
  | _ -> l;;
 
 (* ------------------------------------------------------------------------- *)
@@ -494,11 +494,13 @@ let rec rev_assocd a l d =
 (* Version of map that avoids rebuilding unchanged subterms.                 *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let rec qmap f l =
   match l with
     h::t -> let h' = f h and t' = qmap f t in
             if h' == h && t' == t then l else h'::t'
   | _ -> l;;
+*)
 
 (* ------------------------------------------------------------------------- *)
 (* Merging and bottom-up mergesort.                                          *)
