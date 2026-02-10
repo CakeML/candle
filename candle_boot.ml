@@ -14,11 +14,12 @@ let (==) x y = !x; !y; x = y
 
 let ref x = Ref x;;
 
-let (/) = div;;
-let (-.) = Double.(-);;
-let (+.) = Double.(+);;
-let ( *.) = Double.( * );;
-let (/.) = Double.(/);;
+let (/) x y = div x y;;
+let (-.) x y = Double.(-) x y;;
+let (+.) x y = Double.(+) x y;;
+let ( *.) x y = Double.( * ) x y;;
+let (/.) x y = Double.(/) x y;;
+let (||) x y = x || y;;
 
 (* OCaml parser doesn't like ~, and the CakeML parser doesn't like ~- nor ~-. *)
 (*CML

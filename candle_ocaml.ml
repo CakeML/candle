@@ -39,6 +39,17 @@ module Candle = struct
   ;;
 end;;
 
+module Pair = struct
+  let compare cmpa cmpb (a1, b1) (a2, b2) =
+    let ar = cmpa a1 a2 in
+    if ar = 0 then cmpb b1 b2 else ar
+end;;
+
+module Int = struct
+  let compare x y =
+    if x < y then -1 else if x > y then 1 else 0
+end;;
+
 module Float = struct
   let zero = Cake.Double.fromInt 0
   let one = Cake.Double.fromInt 1
@@ -48,7 +59,17 @@ module Float = struct
 end;;
 
 module List = struct
+  let fold_left f init xs = Cake.List.foldl (fun x y -> f y x) init xs
+  let map f xs = Cake.List.map f xs
   let exists f xs = Cake.List.exists f xs
+  let rec compare cmp xs ys =
+    match (xs, ys) with
+    | ([], []) -> 0
+    | ([], l2) -> -1
+    | (l1, []) -> 1
+    | (x::l1, y::l2) ->
+       let r = cmp x y in
+       if r = 0 then compare cmp l1 l2 else r
 end;;
 
 module Char = struct
@@ -68,6 +89,7 @@ module String = struct
   let length s = Cake.String.size s;;
   let compare x y = Candle.ordering_to_int Cake.String.compare x y
   let escaped s = Cake.String.escape_str s
+  let concat sep ss = Cake.String.concatWith sep ss
 end;;
 
 module Array = struct

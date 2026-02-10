@@ -363,9 +363,7 @@ let rec uniq l =
 (* Convert list into set by eliminating duplicates.                          *)
 (* ------------------------------------------------------------------------- *)
 
-(*
-let setify s = uniq (sort (fun x y -> compare x y <= 0) s);;
-*)
+let setify (<=) s = uniq (sort (fun x y -> x <= y) s);;
 
 (* ------------------------------------------------------------------------- *)
 (* String operations (surely there is a better way...)                       *)
@@ -541,31 +539,59 @@ let decreasing f x y = compare (f x) (f y) > 0;;
 (*                                                                           *)
 (* Idea due to Diego Olivier Fernandez Pons (OCaml list, 2003/11/10).        *)
 (* ------------------------------------------------------------------------- *)
+
 (*
 type ('a,'b)func =
    Empty
  | Leaf of int * ('a*'b)list
  | Branch of int * int * ('a,'b)func * ('a,'b)func;;
+*)
+
+(* OA:
+     I can't map anything I want into an integer, but I can attach a comparison
+     function to the tree. You loose the canonicity property described above
+     but you'll probably always use the same comparison functions for the same
+     types, anyway, if you need to compare functions.
+ *)
+
+type ('a,'b) func = Func of ('a -> 'a -> int) * ('a * 'b) list;;
+
+let pp_func pk pv (Func (cmp, f)) =
+  Pretty_printer.app_block "func"
+    [Pretty_printer.pp_list (fun (k, v) ->
+      Pretty_printer.tuple [pk k; pv v]) f];;
 
 (* ------------------------------------------------------------------------- *)
 (* Undefined function.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let undefined = Empty;;
+*)
+
+let undefined cmp = Func (cmp, []);;
 
 (* ------------------------------------------------------------------------- *)
 (* In case of equality comparison worries, better use this.                  *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let is_undefined f =
   match f with
     Empty -> true
+  | _ -> false;;
+*)
+
+let is_undefined (Func (_, f)) =
+  match f with
+    [] -> true
   | _ -> false;;
 
 (* ------------------------------------------------------------------------- *)
 (* Operation analagous to "map" for lists.                                   *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let mapf =
   let rec map_list f l =
     match l with
@@ -577,11 +603,15 @@ let mapf =
     | Leaf(h,l) -> Leaf(h,map_list f l)
     | Branch(p,b,l,r) -> Branch(p,b,mapf f l,mapf f r) in
   mapf;;
+*)
+
+let mapf f (Func (cmp, t)) = Func (cmp, map (I F_F f) t);;
 
 (* ------------------------------------------------------------------------- *)
 (* Operations analogous to "fold" for lists.                                 *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let foldl =
   let rec foldl_list f a l =
     match l with
@@ -605,21 +635,44 @@ let foldr =
     | Leaf(h,l) -> foldr_list f l a
     | Branch(p,b,l,r) -> foldr f l (foldr f r a) in
   foldr;;
+*)
+
+let rec foldl f a =
+  function [] -> a
+         | (x,y)::xs -> foldl f (f a x y) xs;;
+let foldl f a (Func (_, t)) = foldl f a t;;
+
+let rec foldr f a =
+  function [] -> a
+         | (x,y)::xs -> f x y (foldr f a xs);;
+let foldr f (Func (_, t)) a = foldr f a t;;
 
 (* ------------------------------------------------------------------------- *)
 (* Mapping to sorted-list representation of the graph, domain and range.     *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let graph f = setify (foldl (fun a x y -> (x,y)::a) [] f);;
 
 let dom f = setify(foldl (fun a x y -> x::a) [] f);;
 
 let ran f = setify(foldl (fun a x y -> y::a) [] f);;
+*)
+
+let graph (Func (cmp, t)) vcmp =
+  setify (fun x y -> Pair.compare cmp vcmp x y <> 1) t;;
+
+let dom (Func (cmp, t)) =
+  setify (fun x y -> cmp x y <> 1) (map fst t);;
+
+let ran (Func (cmp, t)) vcmp =
+  setify (fun x y -> vcmp x y <> 1) (map snd t);;
 
 (* ------------------------------------------------------------------------- *)
 (* Application.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let applyd =
   let rec apply_listd l d x =
     match l with
@@ -635,6 +688,18 @@ let applyd =
                 -> look (if k land b = 0 then l else r)
       | _ -> d x in
     look f;;
+ *)
+
+let applyd (Func (cmp, f)) d x' =
+  let rec look t =
+    match t with
+    | [] -> d x'
+    | (x,y)::xs ->
+       let cmpr = cmp x' x in
+       if cmpr < 0 then d x'
+       else if cmpr > 0 then look xs
+       else y in
+  look f;;
 
 let apply f = applyd f (fun x -> failwith "apply");;
 
@@ -646,6 +711,7 @@ let defined f x = try apply f x; true with Failure _ -> false;;
 (* Undefinition.                                                             *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let undefine =
   let rec undefine_list x l =
     match l with
@@ -676,11 +742,23 @@ let undefine =
             else (match r' with Empty -> l | _ -> Branch(p,b,l,r'))
       | _ -> t in
     und;;
+*)
+
+let rec undefine x' cmp t =
+  match t with
+  | [] -> t
+  | (x,y)::xs ->
+     let cmpr = cmp x' x in
+     if cmpr < 0 then t
+     else if cmpr > 0 then (x,y)::undefine x' cmp xs
+     else xs;;
+let undefine x' (Func (cmp, t)) = Func (cmp, undefine x' cmp t);;
 
 (* ------------------------------------------------------------------------- *)
 (* Redefinition and combination.                                             *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let (|->),combine =
   let newbranch p1 t1 p2 t2 =
     let zp = p1 lxor p2 in
@@ -771,23 +849,56 @@ let (|->),combine =
           else
             newbranch p1 t1 p2 t2 in
   (|->),combine;;
+*)
+
+let (|->) x y (Func (cmp, t)) =
+  let rec ins x y t =
+    match t with
+    | [] -> [(x,y)]
+    | (x',y')::xs ->
+       let cmpr = cmp x x' in
+       if cmpr < 0 then (x,y)::t
+       else if cmpr > 0 then (x',y')::ins x y xs
+       else (x,y)::xs in
+  Func (cmp, ins x y t);;
+
+let combine op z (Func (cmp, t1)) (Func (_, t2)) =
+  let rec combine l1 l2 =
+    match l1, l2 with
+    | [], _ -> l2
+    | _, [] -> l1
+    | (x1,y1)::t1, (x2,y2)::t2 ->
+       let cmpr = cmp x1 x2 in
+       if cmpr < 0 then (x1,y1)::combine t1 l2
+       else if cmpr > 0 then (x2,y2)::combine l1 t2
+       else
+         let y = op y1 y2 in
+         let t = combine t1 t2 in
+         if z y then t else (x1,y)::t in
+  Func (cmp, combine t1 t2);;
 
 (* ------------------------------------------------------------------------- *)
 (* Special case of point function.                                           *)
 (* ------------------------------------------------------------------------- *)
 
-let (|=>) = fun x y -> (x |-> y) undefined;;
+let (|=>) = fun x y cmp -> (x |-> y) (undefined cmp);;
 
 (* ------------------------------------------------------------------------- *)
 (* Grab an arbitrary element.                                                *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let rec choose t =
   match t with
     Empty -> failwith "choose: completely undefined function"
   | Leaf(h,l) -> hd l
   | Branch(b,p,t1,t2) -> choose t1;;
 *)
+
+let choose (Func (_, t)) =
+  try hd t
+  with Failure _ ->
+    failwith "choose: completely undefined function";;
 
 (* ------------------------------------------------------------------------- *)
 (* Install a trivial printer for the general polymorphic case.               *)
