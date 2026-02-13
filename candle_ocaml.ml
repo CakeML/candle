@@ -140,6 +140,7 @@ module Format = struct
     Pretty.print_stdout (fun s (l,i) -> pp_print_break s l i) (l, i);;
   let print_space () = Pretty.print_stdout pp_print_space ();;
   let print_newline () = Pretty.print_stdout pp_print_newline ();;
+  let print_flush () = ();; (* TODO? stub *)
 
   let open_box = Pretty.print_stdout pp_open_box;;
   let open_hbox () = Pretty.print_stdout pp_open_hbox ();;
