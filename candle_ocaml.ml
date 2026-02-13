@@ -1,6 +1,7 @@
 exception Invalid_argument of string;;
 exception Sys_error of string;;
 exception End_of_file;;
+exception Not_found;;
 
 let pp_exn e =
   match e with
@@ -9,7 +10,10 @@ let pp_exn e =
   | Sys_error s ->
      Pretty_printer.app_block "Sys_error" [Pretty_printer.pp_string s]
   | End_of_file -> Pretty_printer.token "End_of_file"
+  | Not_found -> Pretty_printer.token "Not_found"
   | _ -> pp_exn e;;
+
+let invalid_arg s = raise (Invalid_argument s);;
 
 let open_in name = try Text_io.openIn name
   with Text_io.Bad_file_name -> raise (Sys_error ("open_in " ^ name))
@@ -61,7 +65,23 @@ end;;
 
 module List = struct
   let fold_left f init xs = Cake.List.foldl (fun x y -> f y x) init xs
+  let fold_right f xs init = Cake.List.foldr f init xs
+  let length xs = Cake.List.length xs
   let map f xs = Cake.List.map f xs
+  let rec map2 f xs ys =
+    match xs, ys with
+    | [], [] -> []
+    | x :: xs', y :: ys' -> f x y :: map2 f xs' ys'
+    | _ -> invalid_arg "map2: lists must have equal length"
+  let mem a set = Cake.List.member a set
+  let rev xs = Cake.List.rev xs
+  let concat xss = Cake.List.concat xss
+  let rev_append l1 l2 =
+    let rec aux acc l =
+      match l with
+        [] -> acc
+      | h::t -> aux (h::acc) t in
+    aux l2 l1;;
   let exists f xs = Cake.List.exists f xs
   let rec compare cmp xs ys =
     match (xs, ys) with
