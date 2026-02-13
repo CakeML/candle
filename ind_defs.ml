@@ -341,7 +341,7 @@ let prove_inductive_relations_exist,new_inductive_definition =
                             clauses in
       let schems = setify Term.(<) schem in
       if is_var(hd schem) then (clauses,[]) else
-      if not (length(setify (fun x y -> List.compare Term.compare x y = Less)
+      if not (length(setify (fun x y -> List.compare Term.compare x y < 0)
                             (map (snd o strip_comb) schems)) = 1)
       then failwith "Schematic variables not used consistently" else
       let avoids = variables (list_mk_conj clauses) in

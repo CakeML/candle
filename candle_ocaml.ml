@@ -48,6 +48,7 @@ end;;
 module Int = struct
   let compare x y =
     if x < y then -1 else if x > y then 1 else 0
+  let to_string x = Cake.Int.toString x
 end;;
 
 module Float = struct

@@ -130,7 +130,7 @@ let (VALID:tactic->tactic) =
 (* Various simple combinators for tactics, identity tactic etc.              *)
 (* ------------------------------------------------------------------------- *)
 
-let (THEN),(THENL),then1_,then_ =
+let (THEN),(THENL),then1_ =
   let propagate_empty i [] = []
   and propagate_thm th i [] = INSTANTIATE_ALL i th in
   let compose_justs n just1 just2 insts2 i ths =
@@ -161,7 +161,7 @@ let (THEN),(THENL),then1_,then_ =
       let _,gls,_ as gstate = tac1 g in
       if gls = [] then tacsequence gstate []
       else tacsequence gstate tac2l in
-  then_,thenl_,(fun tac1 tac2 -> thenl_ tac1 [tac2]),then_;;
+  then_,thenl_,(fun tac1 tac2 -> thenl_ tac1 [tac2]);;
 
 let ((ORELSE): tactic -> tactic -> tactic) =
   fun tac1 tac2 g ->
@@ -765,8 +765,8 @@ let ANTS_TAC =
 (* Set to None if the formatter's default max boxes value is to be used.     *)
 let print_goal_hyp_max_boxes = ref (None:int option);;
 
-let (pp_print_goal:formatter->goal->unit),
-    (pp_print_colored_goal:formatter->goal->unit) =
+let (pp_print_goal:Format.formatter->goal->unit),
+    (pp_print_colored_goal:Format.formatter->goal->unit) =
   let with_color (color_flag:bool) =
     let string_of_int3 n =
       if n < 10 then "  "^string_of_int n
@@ -774,8 +774,8 @@ let (pp_print_goal:formatter->goal->unit),
       else string_of_int n in
     let print_hyp fmt n (s,th) =
       pp_open_hbox fmt ();
-      pp_print_string fmt (string_of_int3 n);
-      pp_print_string fmt " [";
+      Format.pp_print_string fmt (string_of_int3 n);
+      Format.pp_print_string fmt " [";
       pp_open_hvbox fmt 0;
       let old_max_boxes = pp_get_max_boxes fmt () in
       (match !print_goal_hyp_max_boxes with
@@ -785,39 +785,39 @@ let (pp_print_goal:formatter->goal->unit),
         fmt (concl th);
       pp_set_max_boxes fmt old_max_boxes;
       pp_close_box fmt ();
-      pp_print_string fmt "]";
-      (if not (s = "") then (pp_print_string fmt (" ("^s^")")) else ());
+      Format.pp_print_string fmt "]";
+      (if not (s = "") then (Format.pp_print_string fmt (" ("^s^")")) else ());
       pp_close_box fmt ();
-      pp_print_newline fmt () in
+      Format.pp_print_newline fmt () in
     let rec print_hyps fmt n asl =
       if asl = [] then () else
       (print_hyp fmt n (hd asl);
       print_hyps fmt (n + 1) (tl asl)) in
     fun fmt (asl,w) ->
-      pp_print_newline fmt ();
+      Format.pp_print_newline fmt ();
       if asl <> []
-      then (print_hyps fmt 0 (rev asl); pp_print_newline fmt ())
+      then (print_hyps fmt 0 (rev asl); Format.pp_print_newline fmt ())
       else ();
       (if color_flag then pp_print_colored_qterm else pp_print_qterm) fmt w;
-      pp_print_newline fmt () in
+      Format.pp_print_newline fmt () in
   with_color false, with_color true;;
 
-let (pp_print_goalstack:formatter->goalstack->unit),
-    (pp_print_colored_goalstack:formatter->goalstack->unit) =
+let (pp_print_goalstack:Format.formatter->goalstack->unit),
+    (pp_print_colored_goalstack:Format.formatter->goalstack->unit) =
   let print_goalstate color_flag fmt k gs =
     let (_,gl,_) = gs in
     let n = length gl in
     let s = if n = 0 then "No subgoals" else
               (string_of_int k)^" subgoal"^(if k > 1 then "s" else "")
            ^" ("^(string_of_int n)^" total)" in
-    pp_print_string fmt s; pp_print_newline fmt ();
+    Format.pp_print_string fmt s; Format.pp_print_newline fmt ();
     if gl = [] then () else
     do_list
       ((if color_flag then pp_print_colored_goal else pp_print_goal) fmt
         o C el gl)
       (rev(0--(k-1))) in
   let fn color_flag fmt l =
-    if l = [] then pp_print_string fmt "Empty goalstack"
+    if l = [] then Format.pp_print_string fmt "Empty goalstack"
     else if tl l = [] then
       let (_,gl,_ as gs) = hd l in
       print_goalstate color_flag fmt 1 gs
@@ -910,8 +910,9 @@ let (TAC_PROOF : goal * tactic -> thm) =
 
 let prove(t,tac) =
   let th = TAC_PROOF(([],t),tac) in
-  let t' = concl th in
-  if t' = t then th else
+  let asl,t' = dest_thm th in
+  if asl <> [] then failwith "prove: additional assumptions in result"
+  else if t' = t then th else
   try EQ_MP (ALPHA t' t) th
   with Failure _ -> failwith "prove: justification generated wrong theorem";;
 
@@ -921,14 +922,14 @@ let prove(t,tac) =
 
 let current_goalstack = ref ([] :goalstack);;
 
-let (refine:refinement->unit) =
+let (refine:refinement->goalstack) =
   fun r ->
     let l = !current_goalstack in
     if l = [] then failwith "No current goal" else
     let h = hd l in
     let res = r h :: l in
     current_goalstack := res;
-    print_goalstack (!current_goalstack);;
+    !current_goalstack;;
 
 let flush_goalstack() =
   let l = !current_goalstack in
@@ -959,10 +960,10 @@ let er tac =
     e_result
   end else begin
     (if !verbose then print_goalstack !current_goalstack);
-    remark (String.concat [
+    remark (String.concat "" [
                 "\n(Rotating ";
-                Int.toString n_subgoals_to_rotate;
-                "subgoal";
+                Int.to_string n_subgoals_to_rotate;
+                " subgoal";
                 (if n_subgoals_to_rotate = 1 then "" else "s");
                 "...)\n\n"]);
     let new_g = r n_subgoals_to_rotate in
@@ -975,10 +976,10 @@ let er tac =
 let set_goal(asl,w) =
   current_goalstack :=
     [mk_goalstate(map (fun t -> "",ASSUME t) asl,w)];
-  print_goalstack (!current_goalstack);;
+  !current_goalstack;;
 
 let g t =
-  let fvs = sort String.(<) (map (fst o dest_var) (frees t)) in
+  let fvs = sort (fun x y -> String.compare x y < 0) (map (fst o dest_var) (frees t)) in
   (if fvs <> [] then
      let errmsg = end_itlist (fun s t -> s^", "^t) fvs in
      warn true ("Free variables in goal: "^errmsg)
@@ -989,10 +990,10 @@ let b() =
   let l = !current_goalstack in
   if length l = 1 then failwith "Can't back up any more" else
   current_goalstack := tl l;
-  print_goalstack (!current_goalstack);;
+  !current_goalstack;;
 
 let p() =
-  print_goalstack (!current_goalstack);;
+  !current_goalstack;;
 
 let top_realgoal() =
   let (_,((asl,w)::_),_)::_ = !current_goalstack in
