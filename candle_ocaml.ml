@@ -66,6 +66,9 @@ end;;
 module List = struct
   let fold_left f init xs = Cake.List.foldl (fun x y -> f y x) init xs
   let fold_right f xs init = Cake.List.foldr f init xs
+  let find f l = match Cake.List.find f l with
+    | None -> raise Not_found
+    | Some x -> x
   let length xs = Cake.List.length xs
   let map f xs = Cake.List.map f xs
   let rec map2 f xs ys =
