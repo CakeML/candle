@@ -8,6 +8,465 @@
   * page: https://github.com/jrh13/hol-light/commits/master         *
   * *****************************************************************
 
+Thu 26th Feb 2026       Multivariate/metric.ml, Multivariate/paths.ml
+
+Added major new results about path-connectedness in general metric
+spaces, together with generalizations of existing Euclidean-specific
+theorems, almost entirely written by Claude Code (Opus 4.6).
+
+The Alexandroff-Hausdorff theorem (ALEXANDROFF_HAUSDORFF: every
+compact metrizable space is a continuous image of the Cantor space)
+and the Hahn-Mazurkiewicz theorem (HAHN_MAZURKIEWICZ: a metrizable
+continuum is a Peano continuum iff it is a continuous image of the
+unit interval) are entirely new results, not generalizations of
+anything previously in HOL Light. Their proofs go through a chain
+of substantial lemmas: the Alexandroff-Hausdorff embedding provides
+dense maps from Cantor space into compact metric spaces, and a
+gap-filling extension lemma (PEANO_GAP_FILLING_EXTENSION) for
+locally connected continua then yields the full Hahn-Mazurkiewicz
+characterization.
+
+From Hahn-Mazurkiewicz it follows that compact connected locally
+connected metric spaces are path-connected
+(COMPACT_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED). This
+is then extended to the locally compact case by expressing open
+subsets as unions of compact connected locally connected sets
+(LOCALLY_CONNECTED_CONTINUUM_SPACE), then to complete metric
+spaces (MCOMPLETE_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED,
+often called Menger's theorem). The existing Euclidean theorem
+LOCALLY_COMPACT_CONNECTED_IMP_PATH_CONNECTED assumed local
+compactness; the new general version for complete metric spaces is
+strictly stronger, since completeness is a weaker hypothesis than
+local compactness.
+
+New Euclidean specializations in paths.ml include optimal G_delta
+versions: GDELTA_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED
+gives path-connectedness under the weakest natural hypothesis for
+R^n, since G_delta is equivalent to completely metrizable in
+Euclidean space.
+
+Supporting infrastructure includes: well-chained set refinements
+in open covers (CHAIN_FROM_OPEN_COVER), connected chain unions
+(CONNECTED_IN_CHAIN_UNIONS), compact nested intersections
+(COMPACT_NESTED_INTERS), fine connected covers of open connected
+sets (OPEN_CONNECTED_FINE_COVER), the full chain hierarchy
+construction for dyadic approximation (CHAIN_HIERARCHY), and
+closure of dyadic rationals in the unit interval
+(CLOSURE_OF_DYADIC_RATIONALS_IN_UNIT_INTERVAL). New theorems in
+Multivariate/metric.ml:
+
+        ALEXANDROFF_HAUSDORFF
+        CHAIN_FROM_OPEN_COVER
+        CHAIN_HIERARCHY
+        CHAIN_IN_OPEN_CONNECTED_SET
+        CHAIN_REFINEMENT_STEP
+        CLOSURE_OF_DYADIC_RATIONALS_IN_UNIT_INTERVAL
+        COMPACT_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED
+        COMPACT_IN_LOCALLY_CONNECTED_EQ_FCCOVERABLE_SPACE_ALT
+        COMPACT_LOCALLY_CONNECTED_NEARBY_PATH
+        COMPACT_METRIZABLE_LOCALLY_CONNECTED_IMP_LOCALLY_PATH_CONNECTED
+        COMPACT_METRIZABLE_PEANO_IMP_PATH_CONNECTED
+        COMPACT_NESTED_INTERS
+        COMPLETELY_METRIZABLE_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED
+        COMPLETELY_METRIZABLE_LOCALLY_PATH_CONNECTED_EQ_LOCALLY_CONNECTED
+        CONNECTED_IN_CHAIN_UNIONS
+        DENSE_FUNCTION_ON_DYADIC
+        FCCOVERABLE_IN_COMPACT_LOCALLY_CONNECTED
+        FINITE_CONNECTED_COMPONENTS_CLOPEN_UNION
+        FINITE_CONNECTED_COMPONENTS_COMPACT_LOCALLY_CONNECTED
+        HAHN_MAZURKIEWICZ
+        HAHN_MAZURKIEWICZ_IMP
+        LOCALLY_COMPACT_CONNECTED_IMP_PATH_CONNECTED_SPACE
+        LOCALLY_COMPACT_LOCALLY_CONNECTED_IMP_LOCALLY_PATH_CONNECTED_SPACE
+        LOCALLY_COMPACT_LOCALLY_PATH_CONNECTED_EQ_LOCALLY_CONNECTED_SPACE
+        LOCALLY_COMPACT_SPACE_IMP_GDELTA_IN
+        LOCALLY_CONNECTED_CONTINUUM_SPACE
+        LOCALLY_CONSTANT_REFINEMENT
+        LOCALLY_FCCOVERABLE_SPACE
+        LOCALLY_FCCOVERABLE_SPACE_CHAIN
+        MCOMPLETE_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED
+        MCOMPLETE_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED_IN
+        MCOMPLETE_DYADIC_APPROXIMATION
+        MCOMPLETE_IMBEDDING_IN_LC_CONTINUUM
+        MCOMPLETE_IMBEDDING_IN_LC_CONTINUUM_IN
+        MCOMPLETE_IN_LOCALLY_COMPACT_IMP_LOCALLY_COMPACT
+        MCOMPLETE_LOCALLY_CONNECTED_IMP_LOCALLY_PATH_CONNECTED
+        MCOMPLETE_LOCALLY_PATH_CONNECTED_EQ_LOCALLY_CONNECTED
+        OPEN_CONNECTED_FINE_COVER
+        PEANO_GAP_FILLING_EXTENSION
+        SECOND_COUNTABLE_CLOSED_MAP_IMAGE
+        SEMI_LOCALLY_CONNECTED_COMPACT_SPACE
+        SEMI_LOCALLY_CONNECTED_CONNECTED
+        SEMI_LOCALLY_CONNECTED_GEN_SPACE
+        SEPARABLE_METRIZABLE_IMP_SECOND_COUNTABLE
+
+New theorems in Multivariate/paths.ml:
+
+        COMPACT_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED_EUCLIDEAN
+        FINITE_CONNECTED_COMPONENTS_COMPACT_LOCALLY_CONNECTED_EUCLIDEAN
+        GDELTA_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED
+        GDELTA_LOCALLY_CONNECTED_IMP_LOCALLY_PATH_CONNECTED
+        GDELTA_LOCALLY_PATH_CONNECTED_EQ_LOCALLY_CONNECTED
+        LOCALLY_COMPACT_CONNECTED_IMP_PATH_CONNECTED_EUCLIDEAN
+        LOCALLY_COMPACT_LOCALLY_CONNECTED_IMP_LOCALLY_PATH_CONNECTED_EUCLIDEAN
+        LOCALLY_COMPACT_LOCALLY_PATH_CONNECTED_EQ_LOCALLY_CONNECTED_EUCLIDEAN
+        LOCALLY_COMPACT_PATH_CONNECTED_EQ_CONNECTED_EUCLIDEAN
+        MCOMPLETE_CONNECTED_LOCALLY_CONNECTED_IMP_PATH_CONNECTED_EUCLIDEAN
+        MCOMPLETE_IMP_LOCALLY_COMPACT_EUCLIDEAN
+        MCOMPLETE_LOCALLY_CONNECTED_IMP_LOCALLY_PATH_CONNECTED_EUCLIDEAN
+        MCOMPLETE_LOCALLY_PATH_CONNECTED_EQ_LOCALLY_CONNECTED_EUCLIDEAN
+
+In Multivariate/paths.ml, three existing long Euclidean-specific proofs
+are replaced by short bridge derivations from the new general metric
+space versions: SEMI_LOCALLY_CONNECTED (222 lines reduced to 19),
+SEMI_LOCALLY_CONNECTED_GEN (65 lines reduced to 19), and
+LOCALLY_COMPACT_CONNECTED_IMP_PATH_CONNECTED (662 lines reduced to 15).
+All theorem statements are preserved; only the proofs change.
+
+The general metric space versions in metric.ml use a _SPACE suffix to
+distinguish them from existing Euclidean-specific theorems of the same
+logical content in paths.ml. For example, the general version is
+LOCALLY_COMPACT_CONNECTED_IMP_PATH_CONNECTED_SPACE while the
+Euclidean version retains its original name
+LOCALLY_COMPACT_CONNECTED_IMP_PATH_CONNECTED.
+
+Thu 26th Feb 2026       lib.ml, metis.ml
+
+Incorporated a cleanup and rationalization of METIS from Daniel Nezamabadi.
+The main changes are:
+
+ * Applying the bug fixes from the upstream metis repo
+
+ * Inlining various definitions, afterwards simplifying where reasonable
+
+ * Removing duplicate and unused definitions
+
+ * Replacing {foo=foo} pattern matching with {foo}
+
+ * Removing the Order module in favor of OCaml's use of integers
+
+Wed 25th Feb 2026       Library/ringtheory.ml, Library/fieldtheory.ml
+
+Added some material about algebraically closed fields, with a definition
+
+        algebraically_closed_field
+
+and new theorems
+
+        ALGEBRAICALLY_CLOSED_FIELD_DECOMPOSE
+        ALGEBRAICALLY_CLOSED_FIELD_EQ_IRREDUCIBLES
+        ALGEBRAICALLY_CLOSED_FIELD_EQ_SPLITS
+        ALGEBRAICALLY_CLOSED_FIELD_IMP_FIELD
+        ALGEBRAICALLY_CLOSED_FIELD_IMP_INFINITE
+        ALGEBRAICALLY_CLOSED_FIELD_ISOMORPHIC_IMAGE
+        ALGEBRAICALLY_CLOSED_FIELD_NO_PROPER_ALGEBRAIC_EXTENSION
+        ALGEBRAIC_CLOSURE_EXISTS
+        ALGEBRAIC_CLOSURE_EXISTS_ID
+        ALGEBRAIC_CLOSURE_EXTEND_HOMOMORPHISM
+        ALGEBRAIC_CLOSURE_UNIQUE
+        ALGEBRAIC_CLOSURE_UNIQUE_EXPLICIT
+        FIELD_RING_HOMOMORPHISM_MONOMORPHISM
+        INFINITE_INTEGRAL_DOMAIN_POLY_EVAL_ALL_ZERO
+        ISOMORPHIC_RING_ALGEBRAICALLY_CLOSED_FIELD
+        POLY_COMPOSE_HOMOMORPHISM_ADD
+        POLY_COMPOSE_HOMOMORPHISM_CONST
+        POLY_COMPOSE_HOMOMORPHISM_MUL
+        POLY_COMPOSE_HOMOMORPHISM_NEG
+        POLY_COMPOSE_HOMOMORPHISM_POW
+        POLY_COMPOSE_HOMOMORPHISM_SUB
+        POLY_COMPOSE_HOMOMORPHISM_VAR
+        POLY_DEG_1_ROOT
+        POLY_DEG_MUL_X_MINUS_A
+        POLY_DEG_X_MINUS_A
+        POLY_EVALUATE_RING_PRODUCT
+        POLY_EVAL_RING_PRODUCT
+        POLY_EXTEND_RING_PRODUCT
+        POLY_X_MINUS_A_IN_CARRIER
+        POLY_X_MINUS_A_NONZERO
+        RING_HOMOMORPHISM_EPIMORPHISM_FACTOR
+        RING_POWERSERIES
+        SIMPLE_ALGEBRAIC_EXTEND_HOMOMORPHISM
+
+The existence proofs ALGEBRAIC_CLOSURE_EXISTS_ID and ALGEBRAIC_CLOSURE_EXISTS
+were done by John Harrison following Jelonek's paper "A simple proof of the
+existence of the algebraic closure of a field". The rest, such as various
+alternative characterizations and the uniqueness up to isomorphism, were
+written by Claude Opus 4.6.
+
+Sat 21st Feb 2026       100/cubedissection.ml [new file]
+
+Added a formalization of the impossibility of cube dissection into finitely
+many smaller cubes of pairwise distinct sizes ("cubing the cube"), originally
+proved by R. L. Brooks, C. A. B. Smith, A. H. Stone and W. T. Tutte, "The
+Dissection of Rectangles into Squares", Duke Mathematical Journal, vol. 7
+(1940), pp. 312-340. The proof follows the elegant argument presented in J. E.
+Littlewood, "A Mathematician's Miscellany" (CUP, 1953), revised edition
+"Littlewood's Miscellany" (ed. B. Bollobas, CUP, 1986), pp. 28-29 and the HOL
+Light formalization was almost entirely written by Claude Code (Opus 4.6).
+
+Thu 19th Feb 2026       Multivariate/metric.ml
+
+Added some basic definitions and theorems about the Cantor space. The
+basic definition is as the product space (:num->bool), and this is
+then shown to be homeomorphic to its realization as the usual Cantor
+"excluded thirds" subset of [0,1]. New definitions:
+
+        cantor_map
+        cantor_set
+        cantor_space
+        cantor_term
+        tendsto_real_def
+
+and theorems:
+
+        CANTOR_MAP_CLOSED_IMAGE
+        CANTOR_MAP_CLOSED_IN_INTERVAL
+        CANTOR_MAP_CONTINUOUS
+        CANTOR_MAP_EMBEDDING
+        CANTOR_MAP_GE_PARTIAL_SUM
+        CANTOR_MAP_IMAGE_SUBSET_INTERVAL
+        CANTOR_MAP_INJECTIVE
+        CANTOR_MAP_LE_ONE
+        CANTOR_MAP_PARTIAL_SUM_BOUND
+        CANTOR_MAP_POS
+        CANTOR_MAP_RANGE
+        CANTOR_MAP_STRICT_LT
+        CANTOR_MAP_SUMMABLE
+        CANTOR_MAP_SUMS
+        CANTOR_PARTIAL_SUM_DIFF_AT_K
+        CANTOR_PARTIAL_SUM_MONO
+        CANTOR_SET_SUBSET_INTERVAL
+        CANTOR_SPACE_HOMEOMORPHIC_CANTOR_SET
+        CANTOR_TERM_BOUND
+        CANTOR_TERM_CONTINUOUS
+        CANTOR_TERM_POS
+        CLOSED_IN_CANTOR_SET
+        CLOSED_IN_CANTOR_SET_INTERVAL
+        COMPACT_SPACE_CANTOR_SPACE
+        HAUSDORFF_SPACE_CANTOR_SPACE
+        METRIZABLE_SPACE_CANTOR_SPACE
+        NONEMPTY_TOPSPACE_CANTOR_SPACE
+        PERFECT_CANTOR_SPACE
+        PERFECT_CANTOR_SPACE_EQ
+        SUM_TWOTHIRDS
+        TENDSTO_REAL_EPS_DELTA
+        TOPSPACE_CANTOR_SPACE
+        TWOTHIRDS_SUMS
+        ZERO_DIMENSIONAL_CANTOR_SPACE
+
+The new definition "tendsto_real_def" is just a more basic definition of
+the usual notion of the sum of a real series, so that it can be used in
+the general topology theories without the artificially circuitous
+derivation via real^N. The former definition "tendsto_real" is now a
+derived theorem rather than a definition, but is equivalent.
+
+Thu 19th Feb 2026       Multivariate/metric.ml, Multivariate/topology.ml, Multivariate/paths.ml
+
+Added general metric space versions of well-chainedness, connectedness
+of chains, and the two uniform variants of local connectedness (ULC =
+uniformly locally connected and FCCOVERABLE = fine connected coverable,
+a.k.a. Whyburn's "Property S"), together with key results connecting
+them to local connectedness and compactness. The Euclidean special cases
+in paths.ml and topology.ml are then derived from the general versions.
+New definitions:
+
+        fccoverable_in
+        fccoverable_space
+        ulc_space
+
+and new theorems:
+
+        COMPACT_IN_LOCALLY_CONNECTED_EQ_FCCOVERABLE_SPACE
+        COMPACT_IN_LOCALLY_CONNECTED_IMP_FCCOVERABLE_SPACE
+        COMPACT_IN_LOCALLY_CONNECTED_IMP_ULC_SPACE
+        COMPACT_IN_LOCALLY_CONNECTED_IMP_ULC_SPACE_ALT
+        CONNECTED_COMPONENT_OF_EQ_WELLCHAINED
+        CONNECTED_COMPONENT_OF_IMP_WELLCHAINED
+        CONNECTED_EQ_WELLCHAINED_IN
+        CONNECTED_IN_CHAIN
+        CONNECTED_IN_CHAIN_GEN
+        CONNECTED_IN_IFF_CONNECTED_COMPONENT_OF
+        CONNECTED_IN_IMP_WELLCHAINED
+        CONNECTED_IN_NEST
+        CONNECTED_IN_NEST_GEN
+        CONNECTED_IN_UNIONS_STRONG
+        EPSILON_ABSORBING_IMP_CLOPEN
+        FCCOVERABLE_IN_IMP_FCCOVERABLE_SPACE_SUBMETRIC
+        FCCOVERABLE_IN_IMP_LOCALLY_CONNECTED_SPACE
+        FCCOVERABLE_SPACE_EQ_FCCOVERABLE_IN_MSPACE
+        FCCOVERABLE_SPACE_IMP_LOCALLY_CONNECTED_SPACE
+        FCCOVERABLE_SPACE_INTERMEDIATE_CLOSURE
+        IN_CLOSURE_OF_IMP_SUBSET_MCBALL
+        MBALL_INTER_DSEPARATED_SINGLETON
+        MDIAMETER_SUBSET_MBALL
+        MDIAMETER_SUBMETRIC
+        MDIST_TRIANGLE_LT
+        NESTED_COMPACT_APPROX
+        TOTALLY_BOUNDED_IMP_DISCRETE_FINITE
+        TOTALLY_BOUNDED_ULC_SPACE_IMP_FCCOVERABLE_SPACE
+        ULC_SPACE_IMP_LOCALLY_CONNECTED_SPACE
+        WELLCHAINED_ELEMENTS
+        WELLCHAINED_INTERS
+        WELLCHAINED_SETS
+
+In Multivariate/topology.ml, the theorems CONNECTED_CHAIN,
+CONNECTED_CHAIN_GEN, CONNECTED_NEST and CONNECTED_NEST_GEN are
+rederived from their general topological counterparts. All theorem
+statements are preserved.
+
+In Multivariate/paths.ml, the Euclidean-specific theorems about ULC and
+FCCOVERABLE (FCCOVERABLE_IMP_LOCALLY_CONNECTED through
+COMPACT_LOCALLY_CONNECTED_EQ_FCCCOVERABLE) are rederived from the
+general metric space versions via a set of bridge lemmas connecting
+submetric euclidean_metric to the Euclidean topology. The well-chained
+theorems (CONNECTED_IMP_WELLCHAINED through
+CONNECTED_COMPONENT_EQ_WELLCHAINED) are similarly rederived. All theorem
+statements are preserved.
+
+Incompatible changes: In paths.ml, three Euclidean-specific theorems
+have been renamed with a _EUCLIDEAN suffix to avoid clashing with the
+new general versions in metric.ml that take the same names:
+
+        WELLCHAINED_ELEMENTS  -> WELLCHAINED_ELEMENTS_EUCLIDEAN
+        WELLCHAINED_SETS      -> WELLCHAINED_SETS_EUCLIDEAN
+        WELLCHAINED_INTERS    -> WELLCHAINED_INTERS_EUCLIDEAN
+
+These were not used outside their original block so the renaming
+should not affect other files. Several new Euclidean bridge lemmas are
+introduced in paths.ml (SUBMETRIC_EUCLIDEAN_METRIC,
+MTOPOLOGY_SUBMETRIC_EUCLIDEAN, MBOUNDED_SUBMETRIC_EUCLIDEAN,
+MDIAMETER_SUBMETRIC_EUCLIDEAN, and others) to support the derivations.
+
+The statements and proofs were almost entirely written by Claude Code
+(Opus 4.6).
+
+Thu 19th Feb 2026       Library/ringtheory.ml, Library/rabin_test.ml [new file]
+
+Added a proof of Rabin's test for irreducibility of polynomials over
+finite fields. The development, both statements and proofs, was
+entirely written by Claude Code (Opus 4.6, running on AWS Bedrock). A
+few lemmas have been slightly tweaked manually and placed in the ring
+theory file, since they seem more broadly applicable:
+
+        POLY_DEG_1_IMP_IRREDUCIBLE
+        POLY_DEG_EQ_0_UNIT
+        POLY_DEG_UNIT
+        RING_DIVIDES_SUB_POW
+        RING_PRODUCT_CONST
+        RING_PRODUCT_LMUL
+        RING_SUB_TELESCOPE
+
+These are the theorems in the main Library/rabin_test.ml file
+culminating in RABIN_IRREDUCIBILITY_TEST:
+
+        FIELD_NONZERO_PRODUCT_PERMUTE
+        FIELD_ROOTS_BOUND
+        FINITE_FIELD_ELEMENT_POW
+        FINITE_FIELD_POW_ITERATE
+        ING_DIVIDES_POW_ITERATE
+        IRREDUCIBLE_DIVIDES_DEGREE
+        IRREDUCIBLE_DIVIDES_DEGREE_BOUND
+        IRREDUCIBLE_DIVIDES_XQ_MINUS_X
+        IRREDUCIBLE_DIVIDES_XQ_MINUS_X_GEN
+        IRRED_DIVIDES_POLY_EVAL_MINUS
+        POLY_NONUNIT_DEGREE_GE_1
+        QUOTIENT_POLY_RING_FINITE_CARD
+        RABIN_IRREDUCIBILITY_NECESSARY
+        RABIN_IRREDUCIBILITY_SUFFICIENT
+        RABIN_IRREDUCIBILITY_TEST
+        RING_DIVIDES_REDUCE
+        RING_ENDOMORPHISM_FROBENIUS_ITERATE
+
+Sun 15th Feb 2026       Multivariate/metric.ml, Multivariate/topology.ml, Multivariate/paracompact.ml [new file]
+
+Added a definition of paracompactness to the core general topology theory in
+Multivariate/metric.ml, with a large number of typical results about it
+including Stone's theorem that a metrizable space is paracompact and the
+existence of subordinate partitions of unity. Some results that seemed more
+specialized or obscure (e.g. Nagata-Smirnov metrization and Michael's
+characterization of paracompactness) are placed in a separate file
+Multivariate/paracompact.ml that is not part of the main Multivariate load
+sequence. The vast majority of the proofs, including all those in the
+Multivariate/paracompact.ml file,  were automatically written by Claude Code
+(two separate instances with a mix of Opus 4.5 and 4.6).
+
+Sun 15th Feb 2026       itab.ml, unit_tests.ml
+
+Added a new UNIFY_REFL_TAC tactic from June Lee, which unifies metavariables
+in an equational goal ?- t = X where X is a metavariable by assigning X to t.
+
+Thu 29th Jan 2026       Multivariate/metric.ml, Multivariate/topology.ml, Multivariate/paths.ml
+
+Added a proof of Urysohn's metrization theorem and also a definition of set
+diameter for a general metric space, "mdiameter", with basic properties
+mirroring as appropriate those in the Euclidean special case "diameter".
+New definition:
+
+        mdiameter
+
+and theorems:
+
+        EMBEDDING_INTO_METRIZABLE_IMP_METRIZABLE
+        LEBESGUE_COVERING_LEMMA
+        LEBESGUE_COVERING_LEMMA_GEN
+        MBOUNDED_AND_MDIAMETER_LE
+        MBOUNDED_IMP_IN_MSPACE
+        MDIAMETER_BOUNDED
+        MDIAMETER_BOUNDED_BOUND
+        MDIAMETER_CLOSURE
+        MDIAMETER_COMPACT_ATTAINED
+        MDIAMETER_EMPTY
+        MDIAMETER_EQ_0
+        MDIAMETER_EUCLIDEAN
+        MDIAMETER_LE
+        MDIAMETER_POS_LE
+        MDIAMETER_SING
+        MDIAMETER_SUBSET
+        MDIAMETER_SUBSET_MCBALL
+        MDIAMETER_SUBSET_MCBALL_NONEMPTY
+        MDIAMETER_UNION_LE
+        METRIZABLE_PRODUCT_EUCLIDEANREAL_NUM
+        REGULAR_SECOND_COUNTABLE_HAUSDORFF_IMP_NORMAL_SPACE
+        SEPARATING_FUNCTIONS_INJECTIVE
+        URYSOHN_METRIZATION
+        URYSOHN_METRIZATION_EQ
+
+The two theorems LEBESGUE_COVERING_LEMMA / LEBESGUE_COVERING_LEMMA_GEN
+simply replace and generalize the original Euclidean theorems of that name.
+The sole current application now uses the more general versions.
+
+This update has the distinction of being almost entirely written by AI,
+mainly Claude Opus 4.5 via AWS Bedrock. It completed the following
+requests entirely autonomously:
+
+ * Generalize the existing "diameter" theorems as appropriate
+
+ * Autoformalize Urysohn Metrization starting from Munkres's book
+
+This was inspired by, and in the latter case largely reproduces, work
+by Josef Urban reported in https://arxiv.org/abs/2601.03298, with
+the HOL Light setup due to June Lee.
+
+Thu  8th Jan 2026       hol_4.14.sh, holtest.mk, holtest_parallel, TacticTrace/passim
+
+Adopted a patch from June Lee with many improvements focused on TacticTrace:
+
+    - Fixes TacticTrace to support OCaml 5.4
+    - Add an example to TacticTrace. This can be checked with `make test`
+      inside TacticTrace dir, as well as
+      make -f holtest.mk /tmp/hol-light-test/TacticTrace/make-test.ready`.
+    - For easier compilation and inlining of HOL Light proofs, add the
+      following options to hol_4.14.sh:
+      * hol.sh compile <args to ocamlopt>
+      * hol.sh link <args to ocamlopt>
+      * hol.sh inline-load <args to inline_load.ml>
+      Updates to hol_4.sh is not necessary because OCaml 4.14 is the minimal
+      version that supports proof compilation.
+    - Also add `hol.sh -use-module` which prints 1 if HOLLIGHT_USE_MODULE was
+      set when built (0 otherwise)
+    - Slighly simplify TacticTrace by removing the usage of
+      TACLOGGER_DIR env variable.
+
 Mon  8th Dec 2025       Library/words.ml, Examples/bitblast.ml
 
 Fixed a bug in bit-blasting where the conversion from arithmetical to word
