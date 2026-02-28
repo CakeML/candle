@@ -79,6 +79,13 @@ let (lsr) x y =
 
 let (land) x y =
   Word64.toInt (Word64.andb (Word64.fromInt x) (Word64.fromInt y));;
+let (lor) x y =
+  Word64.toInt (Word64.orb (Word64.fromInt x) (Word64.fromInt y));;
+let (lxor) x y =
+  Word64.toInt (Word64.xorb (Word64.fromInt x) (Word64.fromInt y));;
+let lnot x =
+  Word64.toInt (Word64.notb (Word64.fromInt x));;
+
 
 (* TODO Need a better string escaping thing. *)
 let string_escaped =
