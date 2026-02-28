@@ -42,9 +42,9 @@ let UNIFY_REFL_TAC: tactic =
            variables. *)
         let rargs_vars = map
           (fun v -> if is_var v then v else
-            let _ = Printf.printf
-              "UNIFY_REFL_TAC: warning: this isn't var: %s\n"
-              (string_of_term v) in genvar (type_of v)) rargs in
+            let _ = print_string
+              ("UNIFY_REFL_TAC: warning: this isn't var: " ^
+               string_of_term v ^ "\n") in genvar (type_of v)) rargs in
         let f = list_mk_abs (rargs_vars,w_lhs) in
         let the_goal = mk_eq (w_lhs, list_mk_comb (f,rargs)) in
         let th = prove(the_goal,
