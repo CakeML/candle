@@ -33,6 +33,12 @@ let input_line fd =
   | None -> raise End_of_file
 ;;
 
+(* There isn't really a maximal integer since we have bignums. *)
+let max_int = 2305843009213693951  (* 2^61 - 1 *)
+let float_of_int x = Cake.Double.fromInt x
+let int_of_float x = Cake.Double.toInt x
+let floor x = Cake.Double.floor x
+
 (* General helpers. May be moved. *)
 module Candle = struct
   let ordering_to_int cmp x y =
@@ -56,12 +62,22 @@ module Int = struct
 end;;
 
 module Float = struct
+  type float = double
   let zero = Cake.Double.fromInt 0
   let one = Cake.Double.fromInt 1
   let minus_one = Cake.Double.fromInt ~-1
   let sqrt x = Cake.Double.sqrt x
   let abs x = Cake.Double.abs x
+  let compare x y =
+    if Cake.Double.(<) x y then -1
+    else if Cake.Double.(>) x y then 1
+    else 0
+  let of_string s = match Cake.Double.fromString s with
+    | None -> failwith "Float.of_string"
+    | Some x -> x
 end;;
+
+type float = Float.float;;
 
 module List = struct
   let fold_left f init xs = Cake.List.foldl (fun x y -> f y x) init xs
@@ -69,6 +85,24 @@ module List = struct
   let find f l = match Cake.List.find f l with
     | None -> raise Not_found
     | Some x -> x
+  let nth l i =
+    if i < 0 then raise (Invalid_argument "List.nth")
+    else if i >= Cake.List.length l then raise (Failure "List.nth")
+    else Cake.List.nth l i
+  let for_all f l = Cake.List.all f l
+  let iter f xs = Cake.List.app f xs
+  let hd = function
+    | [] -> failwith "List.hd"
+    | h :: _ -> h
+  let rec assoc key = function
+    | [] -> raise Not_found
+    | (k, v) :: rest -> if k = key then v else assoc key rest
+  let rec mem_assoc key = function
+    | [] -> false
+    | (k, _) :: rest -> k = key || mem_assoc key rest
+  let filter f l = Cake.List.filter f l
+  let partition f l = Cake.List.partition f l
+  let sort cmp xs = Cake.List.sort (fun x y -> cmp x y < 0) xs
   let length xs = Cake.List.length xs
   let map f xs = Cake.List.map f xs
   let rec map2 f xs ys =
@@ -97,6 +131,10 @@ module List = struct
 end;;
 
 module Char = struct
+  let compare c1 c2 =
+    if Cake.Char.(<) c1 c2 then -1
+    else if Cake.Char.(>) c1 c2 then 1
+    else 0
   let code c = Cake.Char.ord c
   let chr i = try Cake.Char.chr i
     with Chr -> raise (Invalid_argument "Char.chr")
@@ -171,3 +209,24 @@ module Format = struct
   let open_hvbox = Pretty.print_stdout pp_open_hvbox;;
   let close_box () = Pretty.print_stdout pp_close_box ();;
 end;;
+
+(* TODO Move Random module to CakeML basis. *)
+module Random = struct
+  (* TODO This should probably be a local in CakeML *)
+  let state = ref 1;;
+
+  let init i = state := i;;
+
+  let bits () =
+    (* Parameters permanently borrowed from glibc's stdlib/random_r.c *)
+    let a = 1103515245 in
+    let c = 12345 in
+    let m = 2147483648 (* 2^31 *) in
+    let next_s = (a * !state + c) mod m in
+    state := next_s; next_s;;
+
+  let int bound =
+    if 0 <= bound || bound >= 1073741824 (* 2^30 *)
+    then raise (Invalid_argument "Random.int")
+    else bits () mod bound;;
+end
