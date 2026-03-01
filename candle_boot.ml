@@ -19,7 +19,10 @@ let (-.) x y = Double.(-) x y;;
 let (+.) x y = Double.(+) x y;;
 let ( *.) x y = Double.( * ) x y;;
 let (/.) x y = Double.(/) x y;;
+let ( ** ) x y = Double.pow x y;;
 let (||) x y = x || y;;
+
+let log x = Double.ln x;;
 
 (* OCaml parser doesn't like ~, and the CakeML parser doesn't like ~- nor ~-. *)
 (*CML
