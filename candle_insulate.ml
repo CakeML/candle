@@ -410,15 +410,18 @@ module Cake = struct
 
 end;;
 
-(* Empty module stubs to prevent direct CakeML API usage *)
+(* Module stubs to prevent direct CakeML API usage *)
 (* Users must access these through the Cake module *)
+(* Types are re-exported so that pretty printers still work *)
 
 module Alist = struct end;;
 module Array = struct end;;
 module Bool = struct end;;
 module Char = struct end;;
 module Command_line = struct end;;
-module Double = struct end;;
+module Double = struct
+  type double = Cake.Double.double
+end;;
 module Hashtable = struct end;;
 module Int = struct end;;
 module List = struct end;;
@@ -426,7 +429,9 @@ module Map = struct end;;
 module Marshalling = struct end;;
 module Option = struct end;;
 module Pair = struct end;;
-module Rat = struct end;;
+module Rat = struct
+  type rat = Cake.Rat.rat
+end;;
 module Runtime = struct end;;
 module Set = struct end;;
 module Sexp = struct end;;

@@ -159,13 +159,20 @@ def generate_ocaml_bindings(bindings):
     lines.append("end;;")
     lines.append("")
 
-    # Generate empty module stubs to prevent direct access
-    lines.append("(* Empty module stubs to prevent direct CakeML API usage *)")
+    # Generate module stubs that re-export pretty printers
+    lines.append("(* Module stubs to prevent direct CakeML API usage *)")
     lines.append("(* Users must access these through the Cake module *)")
+    lines.append("(* Types are re-exported so that pretty printers still work *)")
     lines.append("")
 
     for ocaml_module_name in module_names:
-        lines.append(f"module {ocaml_module_name} = struct end;;")
+        if ocaml_module_name in MODULE_TYPES:
+            lines.append(f"module {ocaml_module_name} = struct")
+            for type_name in MODULE_TYPES[ocaml_module_name]:
+                lines.append(f"  type {type_name} = Cake.{ocaml_module_name}.{type_name}")
+            lines.append("end;;")
+        else:
+            lines.append(f"module {ocaml_module_name} = struct end;;")
 
     lines.append("")
     lines.append("(* End of generated section *)")
