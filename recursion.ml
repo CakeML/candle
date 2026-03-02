@@ -30,7 +30,7 @@ let prove_recursive_functions_exist =
     let raxs =
       map (findax o fst o dest_const o repeat rator o hd o snd) lpats in
     let axfns = map (repeat rator o lhand o snd o strip_forall) raxs in
-    let (<=) x y = Pair.compare Term.compare Term.compare x y <> Greater in
+    let (<=) x y = Pair.compare Term.compare Term.compare x y <= 0 in
     let urfns =
      map (fun v -> assocd v (setify (<=) (zip axfns (map fst lpats))) v)
          exvs in

@@ -1608,7 +1608,7 @@ let MOD_MULT_MOD = prove
   ASM_REWRITE_TAC[MULT_CLAUSES; MOD_ZERO; ADD_CLAUSES] THEN
   ASM_CASES_TAC `p = 0` THENL
    [ASM_REWRITE_TAC[MULT_CLAUSES; MOD_ZERO] THEN
-    ASM_MESON_TAC[DIVISION; MULT_SYM]; (* OA: Metis *)
+    ASM_METIS_TAC[DIVISION; MULT_SYM];
     ALL_TAC] THEN
   MATCH_MP_TAC(MESON[EQ_ADD_LCANCEL] `(?a. a + x = a + y) ==> x = y`) THEN
   EXISTS_TAC `m DIV n DIV p * n * p` THEN
@@ -1711,7 +1711,7 @@ let DIVMOD_ELIM_THM' = prove
 (* ------------------------------------------------------------------------- *)
 
 let MOD_DOWN_CONV =
-  let MOD_SUC_MOD = MESON[ADD1; MOD_ADD_MOD; MOD_MOD_REFL] (* OA: Metis *)
+  let MOD_SUC_MOD = METIS[ADD1; MOD_ADD_MOD; MOD_MOD_REFL]
    `(SUC(m MOD n)) MOD n = SUC m MOD n` in
   let addmul_conv = GEN_REWRITE_CONV I
     [GSYM MOD_SUC_MOD; GSYM MOD_ADD_MOD; GSYM MOD_MULT_MOD2; GSYM MOD_EXP_MOD]
@@ -1744,8 +1744,8 @@ let NUM_CANCEL_CONV =
   let AC_RULE = AC ADD_AC in
   fun tm ->
     let l,r = dest_eq tm in
-    let lats = sort Term.(<) (binops `(+)` l)
-    and rats = sort Term.(<) (binops `(+)` r) in
+    let lats = sort Term.(<=) (binops `(+)` l)
+    and rats = sort Term.(<=) (binops `(+)` r) in
     let i,lats',rats' = minter [] [] [] lats rats in
     let l' = list_mk_binop add_tm (i @ lats')
     and r' = list_mk_binop add_tm (i @ rats') in
@@ -1874,7 +1874,7 @@ let DEPENDENT_CHOICE = prove
 (* `BIT1`, `_0` that is not part of a well-formed numeral.                   *)
 (* ------------------------------------------------------------------------- *)
 
-let (BITS_ELIM_CONV : conv) =
+let BITS_ELIM_CONV : conv =
   let NUMERAL_pth = prove(`m = n <=> NUMERAL m = n`,REWRITE_TAC[NUMERAL])
   and ZERO_pth = GSYM (REWRITE_CONV[NUMERAL] `0`)
   and BIT0_pth,BIT1_pth = CONJ_PAIR
