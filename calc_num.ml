@@ -274,9 +274,11 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
     | Comb(Const("BIT0",_),t)|Comb(Const("BIT1",_),t) -> wellformed t
     | _ -> false in
   let rec orderrelation mtm ntm =
+(*
     if mtm == ntm then
       if wellformed mtm then 0 else failwith "orderrelation"
     else
+*)
       match (mtm,ntm) with
         Const("_0",_),Const("_0",_) -> 0
       | Const("_0",_),_ ->
@@ -380,18 +382,18 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
       (if free_in suc_tm tm1 then 3 else 2) in
     let add_clauses,add_flags =
       let l1,l2 = unzip(map (mkclauses false) starts) in
-      Array.fromList(map STANDARDIZE l1),Array.fromList l2 in
+      Array.of_list(map STANDARDIZE l1),Array.of_list l2 in
     let adc_clauses,adc_flags =
       let l1,l2 = unzip(map (mkclauses true) starts) in
-      Array.fromList(map STANDARDIZE l1),Array.fromList l2 in
+      Array.of_list(map STANDARDIZE l1),Array.of_list l2 in
     let rec NUM_ADD_RULE mtm ntm =
       let m_lo,m_hi = topsplit mtm
       and n_lo,n_hi = topsplit ntm in
       let m_ind = if m_hi = zero_tm then m_lo else m_lo + 16
       and n_ind = if n_hi = zero_tm then n_lo else n_lo + 16 in
       let ind = 32 * m_ind + n_ind in
-      let th1 = Array.sub add_clauses ind
-      and fl = Array.sub add_flags ind in
+      let th1 = Array.get add_clauses ind
+      and fl = Array.get add_flags ind in
       match fl with
         0 -> INST [m_hi,m_tm] th1
       | 1 -> INST [n_hi,n_tm] th1
@@ -409,8 +411,8 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
       let m_ind = if m_hi = zero_tm then m_lo else m_lo + 16
       and n_ind = if n_hi = zero_tm then n_lo else n_lo + 16 in
       let ind = 32 * m_ind + n_ind in
-      let th1 = Array.sub adc_clauses ind
-      and fl = Array.sub adc_flags ind in
+      let th1 = Array.get adc_clauses ind
+      and fl = Array.get adc_flags ind in
       match fl with
         0 -> INST [m_hi,m_tm] th1
       | 1 -> INST [n_hi,n_tm] th1
@@ -449,7 +451,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
       CONV_TAC(BINOP_CONV SYM_CONV) THEN
       SUBST1_TAC(SYM(SPEC `_0` NUMERAL)) THEN
       REWRITE_TAC[ADD_EQ_0; MULT_EQ_0; BIT0])
-    and pths_1 = (Array.fromList o CONJUNCTS o STANDARDIZE o prove)
+    and pths_1 = (Array.of_list o CONJUNCTS o STANDARDIZE o prove)
      (`(n = a + p * b <=>
         BIT0(BIT0(BIT0(BIT0 n))) =
         BIT0(BIT0(BIT0(BIT0 a))) + BIT0(BIT0(BIT0(BIT0 p))) * b) /\
@@ -506,7 +508,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
       FIRST_X_ASSUM(SUBST1_TAC o SYM) THEN
       REWRITE_TAC[ADD_CLAUSES; SUC_INJ; EQ_MULT_LCANCEL; ARITH_EQ;
                   GSYM LEFT_ADD_DISTRIB; GSYM MULT_ASSOC])
-    and pths_0 = (Array.fromList o CONJUNCTS o STANDARDIZE o prove)
+    and pths_0 = (Array.of_list o CONJUNCTS o STANDARDIZE o prove)
      (`(n = _0 + p * b <=>
         BIT0(BIT0(BIT0(BIT0 n))) =
         _0 + BIT0(BIT0(BIT0(BIT0 p))) * b) /\
@@ -572,11 +574,11 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
           let th1 = NUM_SHIFT_CONV (k - 4) ntm in
           (match concl th1 with
                Comb(_,Comb(Comb(_,Const("_0",_)),Comb(Comb(_,ptm),btm))) ->
-                  let th2 = Array.sub pths_0 i in
+                  let th2 = Array.get pths_0 i in
                   let th3 = INST [ntm,n_tm; btm,b_tm; ptm,p_tm] th2 in
                   EQ_MP th3 th1
              | Comb(_,Comb(Comb(_,atm),Comb(Comb(_,ptm),btm))) ->
-                  let th2 = Array.sub pths_1 i in
+                  let th2 = Array.get pths_1 i in
                   let th3 = INST[ntm,n_tm; atm,a_tm; btm,b_tm; ptm,p_tm] th2 in
                   EQ_MP th3 th1)
       | Comb(Const("BIT0",_),ntm) ->
@@ -625,7 +627,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
       SUBST1_TAC(SYM(SPEC `_0` NUMERAL)) THEN
       REWRITE_TAC[BIT1; BIT0] THEN REWRITE_TAC[ADD_CLAUSES] THEN
       REWRITE_TAC[RIGHT_ADD_DISTRIB])
-    and puths_1 = (Array.fromList o CONJUNCTS o STANDARDIZE o prove)
+    and puths_1 = (Array.of_list o CONJUNCTS o STANDARDIZE o prove)
        (`(a + p * b = n <=>
           BIT0(BIT0(BIT0(BIT0 a))) + BIT0(BIT0(BIT0(BIT0 p))) * b =
           BIT0(BIT0(BIT0(BIT0 n)))) /\
@@ -683,9 +685,9 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
       FIRST_X_ASSUM(SUBST1_TAC o SYM) THEN
       REWRITE_TAC[ADD_CLAUSES; SUC_INJ; EQ_MULT_LCANCEL; ARITH_EQ;
                   GSYM LEFT_ADD_DISTRIB; GSYM MULT_ASSOC]) in
-    let puths_2 = Array.fromList
-     (map (fun i -> let th1 = Array.sub puths_1 (i mod 16)
-                    and th2 = Array.sub puths_1 (i / 16) in
+    let puths_2 = Array.of_list
+     (map (fun i -> let th1 = Array.get puths_1 (i mod 16)
+                    and th2 = Array.get puths_1 (i / 16) in
                     let th3 = GEN_REWRITE_RULE RAND_CONV [th1] th2 in
                     STANDARDIZE th3) (0--255)) in
     let rec NUM_UNSHIFT_CONV tm =
@@ -710,7 +712,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
                      let th1 = NUM_UNSHIFT_CONV tm' in
                      let th2 = INST [atm'',a_tm; ptm'',p_tm; btm,b_tm;
                                      rand(concl th1),n_tm]
-                                    (Array.sub puths_2 (16 * j + i)) in
+                                    (Array.get puths_2 (16 * j + i)) in
                      EQ_MP th2 th1
                  | _ ->
                    let tm' = mk_comb(mk_comb(add_tm,atm'),
@@ -718,7 +720,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
                    let th1 = NUM_UNSHIFT_CONV tm' in
                    let th2 = INST [atm',a_tm; ptm',p_tm; btm,b_tm;
                                    rand(concl th1),n_tm]
-                                  (Array.sub puths_1 i) in
+                                  (Array.get puths_1 i) in
                    EQ_MP th2 th1)
           | (Const("_0",_),Comb(Const("BIT0",_),qtm),_) ->
                 let th1 = INST [btm,b_tm; qtm,p_tm] pth_z in
@@ -1127,7 +1129,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
     fun tm ->
       match tm with
         Comb(Comb(Const("*",_),mtm),ntm) ->
-            if mtm = ntm then
+            if Term.compare mtm ntm = 0 then
               let th1 = NUM_SQUARE_RULE mtm in
               let ptm = rand(concl th1) in
               EQ_MP (INST [mtm,m_tm;ptm,p_tm] pth_refl) th1
@@ -1169,7 +1171,7 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
       match tm with
         Comb(Comb(Const("*",_),Comb(Const("NUMERAL",_),mtm)),
           Comb(Const("NUMERAL",_),ntm)) ->
-            if mtm = ntm then
+            if Term.compare mtm ntm = 0 then
               let th1 = NUM_SQUARE_RULE mtm in
               let ptm = rand(concl th1) in
               EQ_MP (INST [mtm,m_tm;ptm,p_tm] pth_refl) th1
@@ -1522,3 +1524,39 @@ let EXPAND_CASES_CONV =
   let rec conv tm =
     (base_CONV ORELSEC (step_CONV THENC LAND_CONV conv)) tm in
   conv THENC (REWRITE_CONV[GSYM CONJ_ASSOC]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Computation of (a EXP k) MOD n keeping intermediates reduced              *)
+(* ------------------------------------------------------------------------- *)
+
+let EXP_MOD_CONV =
+  let [pth_0; pth_even; pth_odd] = (CONJUNCTS o prove)
+   (`(a EXP 0) MOD n = 1 MOD n /\
+     (a EXP (NUMERAL(BIT0 k))) MOD n =
+     ((a EXP (NUMERAL k) MOD n) EXP 2) MOD n /\
+     (a EXP (NUMERAL(BIT1 k))) MOD n =
+     (a * ((a EXP (NUMERAL k) MOD n) EXP 2) MOD n) MOD n`,
+    REWRITE_TAC[EXP; EXP_2] THEN REWRITE_TAC[BIT0; BIT1; NUMERAL] THEN
+    REWRITE_TAC[EXP; EXP_ADD] THEN CONV_TAC MOD_DOWN_CONV THEN
+    REWRITE_TAC[]) in
+  let conv_zero = GEN_REWRITE_CONV I [MOD_ZERO]
+  and conv_0 = GEN_REWRITE_CONV I [pth_0]
+  and conv_even = GEN_REWRITE_CONV I [pth_even]
+  and conv_odd = GEN_REWRITE_CONV I [pth_odd] in
+  let rec conv tm =
+    ((conv_0 THENC NUM_MOD_CONV) ORELSEC
+     (conv_even THENC
+      LAND_CONV(LAND_CONV conv THENC NUM_EXP_CONV) THENC
+      NUM_MOD_CONV) ORELSEC
+     (conv_odd THENC
+      LAND_CONV(RAND_CONV(LAND_CONV(LAND_CONV conv THENC NUM_EXP_CONV) THENC
+                          NUM_MOD_CONV) THENC
+                NUM_MULT_CONV) THENC
+      NUM_MOD_CONV)) tm in
+  let fullconv = (conv_zero THENC NUM_EXP_CONV) ORELSEC conv in
+  fun tm ->
+    match tm with
+      Comb(Comb(Const("MOD",_),
+                Comb(Comb(Const("EXP",_),m),k)),n)
+      when is_numeral m && is_numeral k && is_numeral n -> fullconv tm
+  | _ -> failwith "EXP_MOD_CONV";;
