@@ -157,6 +157,15 @@ module String = struct
   let compare x y = Candle.ordering_to_int Cake.String.compare x y
   let escaped s = Cake.String.escape_str s
   let concat sep ss = Cake.String.concatWith sep ss
+  (* TODO Painful use of Word64s which are always boxed; prime candidate for
+     writing in Pancake that's embedded, once that's possible. At that point,
+     it should probably move to CakeML as well. *)
+  (* Adapted from http://www.cse.yorku.ca/~oz/hash.html (djb2) *)
+  let hash s =
+    let times_33 w = (Cake.Word64.(+) (Cake.Word64.(<<) w 5) w) in
+    let step char hash =
+      Cake.Word64.xorb (times_33 hash) (Cake.Word64.fromInt (Cake.Char.ord char)) in
+    Cake.Word64.toInt (Cake.List.foldl step (Cake.Word64.fromInt 5381) (Cake.String.explode s));;
 end;;
 
 module Array = struct
