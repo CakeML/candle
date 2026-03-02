@@ -1164,9 +1164,8 @@ let define_type_raw =
     and pevs1,pbod1 = strip_exists (concl sth1) in
     let pcjs0,qcjs0 = chop_list k (conjuncts pbod0)
     and pcjs1,qcjs1 = chop_list k (snd(chop_list n (conjuncts pbod1))) in
-    let tyal0 =
-      setify (fun x y -> Pair.compare Type.compare Type.compare x y = Less)
-             (zip (map grab_type pcjs1) (map grab_type pcjs0)) in
+    let pty_lt x y = Pair.compare Type.compare Type.compare x y < 0 in
+    let tyal0 = setify pty_lt (zip (map grab_type pcjs1) (map grab_type pcjs0)) in
     let tyal1 = map (fun (a,b) -> (b,a)) tyal0 in
     let tyins0 = map
      (fun f -> let domty,ranty = dest_fun_ty (type_of f) in
@@ -1402,9 +1401,10 @@ let define_type s =
       let defspec = parse_inductive_type_specification s in
       let newtypes = map fst defspec
       and constructors = itlist ((@) o map fst) (map snd defspec) [] in
+      let str_lt x y = String.compare x y < 0 in
       if not(length(setify Type.(<) newtypes) = length newtypes)
       then failwith "define_type: multiple definitions of a type"
-      else if not(length(setify String.(<) constructors) = length constructors)
+      else if not(length(setify str_lt constructors) = length constructors)
       then failwith "define_type: multiple instances of a constructor"
       else if exists (can get_type_arity o dest_vartype) newtypes
       then let t = find (can get_type_arity) (map dest_vartype newtypes) in
