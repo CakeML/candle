@@ -216,7 +216,7 @@ let MP_CLOSURE ths1 ths2 =
 (* Set of terms. Implemented as ordered lists. *)
 module Tset = struct
   (*type t = term list*) (* TODO Makes CakeML pretty printer system dizzy *)
-  let lift f = List.sort Term.(<) o f
+  let lift f = List.sort Term.compare o f
   let of_list = lift I
   let insert ts t =
     let rec self xs = match xs with
