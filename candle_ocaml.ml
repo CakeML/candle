@@ -241,7 +241,7 @@ module Random = struct
     state := next_s; next_s;;
 
   let int bound =
-    if 0 <= bound || bound >= 1073741824 (* 2^30 *)
+    if bound <= 0 || bound >= 1073741824 (* 2^30 *)
     then raise (Invalid_argument "Random.int")
     else bits () mod bound;;
 end;;
