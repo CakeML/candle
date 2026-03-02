@@ -176,6 +176,8 @@ module Array = struct
     with Subscript -> raise (Invalid_argument "Array.get")
   let fold_left f init a = Cake.Array.foldl (fun x y -> f y x) init a
   let of_list l = Cake.Array.fromList l
+  let map f a =
+    Cake.Array.tabulate (Cake.Array.length a) (fun i -> f (Cake.Array.sub a i))
 end;;
 
 module Printexc = struct
