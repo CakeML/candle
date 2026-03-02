@@ -524,6 +524,12 @@ let MAP_I = prove
  (`MAP (I:A->A) = I`,
   REWRITE_TAC[FUN_EQ_THM; I_DEF; MAP_ID]);;
 
+let BUTLAST_CLAUSES = prove
+ (`BUTLAST([]:A list) = [] /\
+   (!a:A. BUTLAST [a] = []) /\
+   (!(a:A) h t. BUTLAST(CONS a (CONS h t)) = CONS a (BUTLAST(CONS h t)))`,
+  REWRITE_TAC[BUTLAST; NOT_CONS_NIL]);;
+
 let BUTLAST_APPEND = prove
  (`!l m:A list. BUTLAST(APPEND l m) =
                 if m = [] then BUTLAST l else APPEND l (BUTLAST m)`,
@@ -895,8 +901,8 @@ let dest_char,mk_char,dest_string,mk_string,CHAR_EQ_CONV,STRING_EQ_CONV =
     try let tms = dest_list tm in
         if fst(dest_type(hd(snd(dest_type(type_of tm))))) <> "char"
         then fail() else
-        let ccs = map (String.str o char_of_term) tms in
-        string_escaped (implode ccs)
+        let ccs = map (String.make 1 o char_of_term) tms in
+        String.escaped (implode ccs)
     with Failure _ -> failwith "dest_string" in
   let mk_bool b =
     let true_tm,false_tm = `T`,`F` in
@@ -906,12 +912,12 @@ let dest_char,mk_char,dest_string,mk_string,CHAR_EQ_CONV,STRING_EQ_CONV =
     let mk_code c =
       let lis = map (fun i -> mk_bool((c / (1 lsl i)) mod 2 = 1)) (0--7) in
       itlist (fun x y -> mk_comb(y,x)) lis ascii_tm in
-    let codes = Array.fromList (List.map mk_code (0--255)) in
-    fun c -> Array.sub codes c in
-  let mk_char = mk_code o Char.ord in
+    let codes = Array.map mk_code (Array.of_list (0--255)) in
+    fun c -> Array.get codes c in
+  let mk_char = mk_code o Char.code in
   let mk_string s =
-    let ns = map (fun i -> Char.ord(String.sub s i))
-                 (0--(String.size s - 1)) in
+    let ns = map (fun i -> Char.code(String.get s i))
+                 (0--(String.length s - 1)) in
     mk_list(map mk_code ns,`:char`) in
   let CHAR_DISTINCTNESS =
     let avars,bvars,cvars =
