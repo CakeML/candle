@@ -109,6 +109,8 @@ module Cake = struct
   end;;
 
   module Hashtable = struct
+    type ('a, 'b) hashtable = ('a, 'b) Hashtable.hashtable
+
     let clear x0 = Hashtable.clear x0
     let delete x0 x1 = Hashtable.delete x0 x1
     let empty x0 x1 x2 = Hashtable.empty x0 x1 x2
@@ -422,7 +424,9 @@ module Command_line = struct end;;
 module Double = struct
   type double = Cake.Double.double
 end;;
-module Hashtable = struct end;;
+module Hashtable = struct
+  type ('a, 'b) hashtable = ('a, 'b) Cake.Hashtable.hashtable
+end;;
 module Int = struct end;;
 module List = struct end;;
 module Map = struct end;;

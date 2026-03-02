@@ -47,6 +47,11 @@ module Candle = struct
     | Less -> ~-1
     | Greater -> 1
   ;;
+  let int_to_ordering cmp x y =
+    let r = cmp x y in
+    if r < 0 then Less
+    else if r > 0 then Greater
+    else Equal
 end;;
 
 module Pair = struct
@@ -229,4 +234,19 @@ module Random = struct
     if 0 <= bound || bound >= 1073741824 (* 2^30 *)
     then raise (Invalid_argument "Random.int")
     else bits () mod bound;;
-end
+end;;
+
+module Hashtbl = struct
+  type ('a, 'b) t = ('a, 'b) Cake.Hashtable.hashtable
+  (* Note that we additionally need to pass in hash and order to create *)
+  let create size hash order =
+    Cake.Hashtable.empty size hash (Candle.int_to_ordering order)
+  let find tbl x =
+    match Cake.Hashtable.lookup tbl x with
+    | None -> raise Not_found
+    | Some y -> y
+  let replace tbl x y = Cake.Hashtable.insert tbl x y
+  let remove tbl x = Cake.Hashtable.delete tbl x
+  let fold f tbl init =
+    Cake.List.foldl (fun (x,y) acc -> f x y acc) init (Cake.Hashtable.toAscList tbl)
+end;;

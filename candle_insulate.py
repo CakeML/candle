@@ -35,10 +35,33 @@ INFIX_NAMES = {
 # types.txt does not contain types, but we need to rebind them so the
 # pretty-printers get generated.
 # Note that if the module does not exist in types.txt this part gets ignored.
+#
+# Entries are of the form (type_var list, type_name).
 MODULE_TYPES = {
-    'Rat': ['rat'],
-    'Double': ['double']
+    'Rat': [([], 'rat')],
+    'Double': [([], 'double')],
+    'Hashtable': [(['a', 'b'], 'hashtable')]
 }
+
+
+def format_type_entry(entry):
+    """
+    Parse a MODULE_TYPES entry and return (type_params_str, type_name).
+
+    type_params_str is the OCaml type parameter prefix (e.g. "'a " or "('a, 'b) "
+    or "" for no parameters).
+    """
+    type_vars, type_name = entry
+
+    if not type_vars:
+        return '', type_name
+
+    quoted = [f"'{v}" for v in type_vars]
+    if len(quoted) == 1:
+        return f"{quoted[0]} ", type_name
+    else:
+        return f"({', '.join(quoted)}) ", type_name
+
 
 def handle_func_name(name):
     """
@@ -137,8 +160,9 @@ def generate_ocaml_bindings(bindings):
 
         # Add type rebindings if specified for this module
         if module_name in MODULE_TYPES:
-            for type_name in MODULE_TYPES[module_name]:
-                lines.append(f"    type {type_name} = {module_name}.{type_name}")
+            for entry in MODULE_TYPES[module_name]:
+                params_str, type_name = format_type_entry(entry)
+                lines.append(f"    type {params_str}{type_name} = {params_str}{module_name}.{type_name}")
             lines.append("")
 
         # Add all functions for this module with eta expansion and symbol escaping
@@ -168,8 +192,9 @@ def generate_ocaml_bindings(bindings):
     for ocaml_module_name in module_names:
         if ocaml_module_name in MODULE_TYPES:
             lines.append(f"module {ocaml_module_name} = struct")
-            for type_name in MODULE_TYPES[ocaml_module_name]:
-                lines.append(f"  type {type_name} = Cake.{ocaml_module_name}.{type_name}")
+            for entry in MODULE_TYPES[ocaml_module_name]:
+                params_str, type_name = format_type_entry(entry)
+                lines.append(f"  type {params_str}{type_name} = {params_str}Cake.{ocaml_module_name}.{type_name}")
             lines.append("end;;")
         else:
             lines.append(f"module {ocaml_module_name} = struct end;;")
