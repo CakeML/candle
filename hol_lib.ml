@@ -125,5 +125,5 @@ let check_axioms () =
   let basic_axioms = [INFINITY_AX; SELECT_AX; ETA_AX] in
   let l = filter (fun th -> not (mem th basic_axioms)) (axioms()) in
   if l <> [] then
-    let msg = "[" ^ (String.concatWith ", " (map string_of_thm l)) ^ "]" in
+    let msg = "[" ^ (String.concat ", " (map string_of_thm l)) ^ "]" in
     failwith ("check_axioms: " ^ msg);;
