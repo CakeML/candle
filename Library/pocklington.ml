@@ -2443,7 +2443,7 @@ let certify_prime = general_certify_prime multifactor;;
 (* HOL checking of primality certificate, using Pocklington shortcut.        *)
 (* ------------------------------------------------------------------------- *)
 
-let prime_theorem_cache = ref [];;
+let prime_theorem_cache = ref ([]: (num * thm) list);;
 
 let rec lookup_under_num n l =
   if l = [] then failwith "lookup_under_num" else
