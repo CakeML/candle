@@ -16,6 +16,9 @@
 # consult your preferred resources to find out how you can give those
 # CAP_SYS_ADMIN to it.
 
+# To restore, we can use the following command:
+#  sudo criu restore -D checkpoint/ --shell-job
+
 # Since we need to restore into a terminal, but also want to call it via make
 # we need to place it into a pseudoterminal. To avoid having to somehow pass
 # the user password into that, we assume that criu can be run with sudo without
