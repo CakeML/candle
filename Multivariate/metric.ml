@@ -12081,7 +12081,7 @@ let METRIC_ARITH : term -> thm =
     and MDIST_SYM_CONV =
       let pconv = IMP_REWR_CONV (ISPEC mtm MDIST_SYM) in
       fun tm -> let x,y = dest_pair (rand tm) in
-                if x <= y then failwith "MDIST_SYM_CONV" else
+                if Term.(<=) x y then failwith "MDIST_SYM_CONV" else
                 MP_CONV in_mspace2_conv (pconv tm)
     and MBOUNDED_CONV =
       let conv0 = REWR_CONV (EQT_INTRO (ISPEC mtm MBOUNDED_EMPTY)) in
@@ -49527,4 +49527,3 @@ let KURATOWSKI_COMPONENT_NUMBER_INVARIANCE = prove
                               CONTINUOUS_MAP_IN_SUBTOPOLOGY]) THEN
   RULE_ASSUM_TAC(REWRITE_RULE[TOPSPACE_SUBTOPOLOGY]) THEN
   ASM SET_TAC[]);;
-
