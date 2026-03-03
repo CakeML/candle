@@ -978,12 +978,12 @@ let strings_of_file filename =
   let data = suck_lines [] in
   (close_in fd; data);;
 
-(*
 let string_of_file filename =
-  let fd = open_in_bin filename in
-  let data = really_input_string fd (in_channel_length fd) in
+  let fd =
+    try open_in filename
+    with Sys_error _ -> failwith("string_of_file: can't open "^filename) in
+  let data = Text_io.inputAll fd in
   (close_in fd; data);;
-*)
 
 let file_of_string filename s =
   let fd = open_out filename in
