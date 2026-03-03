@@ -125,15 +125,8 @@ let pp_get_max_boxes fmt () = Format.pp_get_max_boxes fmt ();;
 let pp_set_max_boxes fmt i = Format.pp_set_max_boxes fmt i;;
 let set_max_boxes i = Format.set_max_boxes i;;
 
-let print_to_string = Pretty.print_to_string;;
-
-(* Functions that print to stdout: *)
-
-let print_string = Format.print_string;;
 let print_break l i = Format.print_break l i;;
 let print_space () = Format.print_space ();;
-let print_newline () = Format.print_newline ();;
-let print_endline s = print_string s; print_newline ();;
 
 let open_box = Format.open_box;;
 let open_hbox () = Format.open_hbox ();;

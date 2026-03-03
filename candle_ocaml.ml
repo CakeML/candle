@@ -184,10 +184,6 @@ module Printexc = struct
   let to_string (e: exn) = "TODO stub (Printexc.to_string)"
 end;;
 
-module Sys = struct
-  let time () = Float.zero;;  (* TODO stub *)
-end;;
-
 module Format = struct
   type formatter = Pretty_imp.state;;
 
@@ -228,6 +224,10 @@ module Format = struct
   let close_box () = Pretty.print_stdout pp_close_box ();;
 end;;
 
+let print_string s = Format.print_string s;;
+let print_newline () = Format.print_newline ();;
+let print_endline s = print_string s; print_newline ();;
+
 (* TODO Move Random module to CakeML basis. *)
 module Random = struct
   (* TODO This should probably be a local in CakeML *)
@@ -262,4 +262,23 @@ module Hashtbl = struct
   let remove tbl x = Cake.Hashtable.delete tbl x
   let fold f tbl init =
     Cake.List.foldl (fun (x,y) acc -> f x y acc) init (Cake.Hashtable.toAscList tbl)
+end;;
+
+module Sys = struct
+  let remove (s: string) = print "TODO Sys.remove (noop)\n"
+  let command (s: string) =
+    print_endline "TODO Sys.command (noop, always returns 1)";
+    1
+  let time () =
+    print_endline "TODO Sys.time (always returns 0)";
+    Float.zero;;
+end;;
+
+module Filename = struct
+  let get_temp_dir_name () =
+    print_endline "TODO Filename.get_temp_dir_name (always returns /tmp)";
+    "/tmp"
+  let temp_file prefix suffix =
+    print_endline "TODO Filename.temp_file (just concats temp dir, prefix, suffix)";
+    get_temp_dir_name () ^ prefix ^ suffix
 end;;
