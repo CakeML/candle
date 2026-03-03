@@ -124,5 +124,5 @@ $(LOGDIR)/%.ready:
 	@mkdir -p $(LOGDIR)/$$(dirname $*)
 	@echo '### Loading $*.ml'
 	@echo '### Loading $*.ml' > $(LOGDIR)/$*
-	@echo 'loads "$*.ml";;Runtime.exit 0;;' | (timeout 60 $(CANDLE) >> $(LOGDIR)/$* 2>&1) || echo "TIMEOUT" >> $(LOGDIR)/$*
+	@echo 'loads "$*.ml";;Cake.Runtime.exit 0;;' | ($(CANDLE) >> $(LOGDIR)/$* 2>&1) || echo "TIMEOUT" >> $(LOGDIR)/$*
 	@touch $(LOGDIR)/$*.ready
