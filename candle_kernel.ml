@@ -95,7 +95,7 @@ module Type = struct
         Pair.compare String.compare (List.compare compare) (x1,a1) (x2,a2)
     | Tyapp _, Tyvar _ -> 1
   ;;
-  let (<) ty1 ty2 = compare ty1 ty2 = -1
+  let (<) ty1 ty2 = compare ty1 ty2 < 0
   ;;
   let (<=) ty1 ty2 = compare ty1 ty2 <> 1
   ;;
@@ -120,7 +120,9 @@ module Term = struct
         Pair.compare compare compare (s1,s2) (t1,t2)
     | Abs _, _ -> 1
   ;;
-  let (<) t1 t2 = compare t1 t2 = -1
+  let (<) t1 t2 = compare t1 t2 < 0
+  ;;
+  let (>) t1 t2 = compare t1 t2 > 0
   ;;
   let (<=) t1 t2 = compare t1 t2 <> 1
   ;;
@@ -132,7 +134,7 @@ module Thm = struct
                  (dest_thm th1)
                  (dest_thm th2)
   ;;
-  let (<) th1 th2 = compare th1 th2 = -1
+  let (<) th1 th2 = compare th1 th2 < 0
   ;;
   let (<=) th1 th2 = compare th1 th2 <> 1
   ;;
