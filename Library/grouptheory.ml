@@ -1017,7 +1017,7 @@ let GROUP_RULE =
     then (GROUP_ROTATE_CONV 1 THENC GROUP_EQ_HYPERNORM_CONV) tm
     else REFL tm in
   fun tm ->
-    let gvs = setify(find_terms (is_groupty o type_of) tm) in
+    let gvs = setify Term.(<=) (find_terms (is_groupty o type_of) tm) in
     if gvs = [] then MESON[] tm else
     if length gvs > 1 then failwith "GROUP_RULE: Several groups involved" else
     let g = hd gvs in
@@ -1055,7 +1055,7 @@ let GROUP_RULE =
       DISCH asm (itlist PROVE_HYP (CONJUNCTS(ASSUME asm)) th2) in
     let th4 = GENL avs th3 in
     let bvs = frees(concl th4) in
-    GENL (sort (<) bvs) th4;;
+    GENL (sort Term.(<) bvs) th4;;
 
 let GROUP_TAC =
   REPEAT GEN_TAC THEN
