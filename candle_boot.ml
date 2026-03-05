@@ -297,7 +297,7 @@ type token =
   | T_char of string
   | T_number of string
   | T_spaces of string
-  | T_done (* pseudo-token at switch from loading to user input *)
+  | T_done (* pseudo-token after loading a file *)
 ;;
 
 let string_of_token unquote tok =
@@ -540,6 +540,15 @@ exception Repl_error;;
 
 let () =
   let prompt = ref (!prompt2) in
+  let pushLoad, popLoad, clearLoadStack =
+    let stack = ref ([]: string list) in
+    let pushLoad fname = stack := fname :: !stack in
+    let popLoad () =
+      match !stack with
+      | fname :: rest as res -> stack := rest; Some (fname, rest)
+      | _ -> None in
+    let clearLoadStack () = stack := [] in
+    pushLoad, popLoad, clearLoadStack in
   let peekChar, nextChar =
     let lookahead = ref (None: char option) in
     let peek () =
@@ -635,10 +644,9 @@ let () =
     let scan = Lexer.scan nextChar peekChar in
     let rec nom acc =
       match scan () with
-      | None -> List.app (Buffer.push_front input_buffer) acc
+      | None -> List.app (Buffer.push_front input_buffer) (Lexer.T_done :: acc)
       | Some tok -> nom (tok::acc) in
-    nom [];
-    Buffer.push_back input_buffer Lexer.T_done in
+    nom [] in
   let next () =
     match Buffer.dequeue input_buffer with
     | Some tok -> Some tok
@@ -651,8 +659,17 @@ let () =
   let rec scan level =
     try match next () with
         | None -> None
-        (* Use token as a loading directive. *)
-        | Some (Lexer.T_use | Lexer.T_needs | Lexer.T_loads as tok) ->
+        (* Attempt to use token as part of loading directive if it sits at the
+           top level (i.e. not inside parenthesis). The REPL fails and reports
+           and error unless the token is followed by a string literal and then
+           double semicolons. Ideally we should also check that the token sits
+           at the start of the line, but we don't, so odd things such as this:
+             foo needs "bar.ml";;
+           are OK and will cause the file bar.ml to be loaded and appear
+           directly after 'foo' in the token stream.
+         *)
+        | Some (Lexer.T_use | Lexer.T_needs | Lexer.T_loads as tok)
+          when level = 0 ->
             begin
               let dir = Option.valOf (Lexer.directive_of_token tok) in
               match next_nonspace () with
@@ -665,6 +682,7 @@ let () =
                         let lines = load dir fname in
                         if List.null lines then scan level else
                           begin
+                            pushLoad fname;
                             userInput := false;
                             scan_lines lines;
                             scan level
@@ -688,7 +706,11 @@ let () =
                        " double semicolon [;;].\n"])
             end
         | Some (Lexer.T_done) ->
-            userInput := true;
+            (match popLoad () with
+             | Some (fname, rest) -> (
+               print ("- Finished loading " ^ fname ^ "\n");
+               if List.null rest then userInput := true)
+             | None -> failwith "candle_boot.ml: scan - should be unreachable");
             scan level
         | Some tok ->
             Buffer.push_back output_buffer tok;
@@ -726,6 +748,7 @@ let () =
       if not (!userInput) then print (!prompt1);
       Buffer.flush input_buffer;
       Buffer.flush output_buffer;
+      clearLoadStack ();
       Repl.nextString := "";
       userInput := true in
   Repl.readNextString := (fun () ->
