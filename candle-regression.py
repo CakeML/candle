@@ -16,16 +16,17 @@ class LoadFailure(Exception):
 
 
 class CandleREPL:
-    def __init__(self):
+    def __init__(self, base):
+        self.base = base
         try:
-            self.process = pexpect.spawn('./candle', encoding='utf-8', logfile=sys.stdout)
+            self.process = pexpect.spawn(os.path.join(self.base, "candle"), encoding='utf-8', logfile=sys.stdout)
         except Exception as e:
             raise StartFailure from e
 
         try:
             self._check_boot()
         except BootFailure:
-            self.process.close(force=True)
+            self.kill()
             raise
 
         self.load_stack = []
@@ -43,7 +44,7 @@ class CandleREPL:
             raise BootFailure from e
 
         if index != 0:
-            reasons = {1: f"{_get_match(1)}", 2: "Timeout", 3: "Process exited unexpectedly"}
+            reasons = {1: str(self._get_match(1)), 2: "Timeout", 3: "Process exited unexpectedly"}
             raise BootFailure(reasons[index])
 
     def _get_match(self, idx):
@@ -69,14 +70,14 @@ class CandleREPL:
 
         match index:
             case 0:
-                dependency = _get_match(1)
-                self.load_stack.push(dependency)
+                dependency = self._get_match(1)
+                self.load_stack.append(dependency)
             case 1:
-                self._set_last_val(_get_match(1))
+                self._set_last_val(self._get_match(1))
             case 2 | 3 | 4:
-                raise LoadFailure(_get_match(1))
+                raise LoadFailure(self._get_match(1))
             case 5:
-                finished = _get_match(1)
+                finished = self._get_match(1)
                 expected = self.load_stack.pop()
                 assert finished == expected, f'Expected to finish loading {expected}. Actual: {finished}'
             case 6:
@@ -87,12 +88,19 @@ class CandleREPL:
                 pass
 
     def load(self, file):
-        self.load_stack.push(file)
-        self.process.sendline(f'#use "{file}"')
+        self.process.sendline(f'#use "{file}";;')
 
-        # todo: while load_stack not empty:
-        while not load_stack:
+        while self.load_stack:
             self._check_output()
+
+    def kill(self):
+        self.process.close(force=True)
+
+    def dump(self):
+        pass
+
+    def restore(self):
+        pass
 
 candle = CandleREPL()
 
