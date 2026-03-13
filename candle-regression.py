@@ -1,6 +1,8 @@
 import sys
 import pexpect
 import time
+import subprocess
+import os
 
 
 class StartFailure(Exception):
@@ -17,9 +19,11 @@ class LoadFailure(Exception):
 
 class CandleREPL:
     def __init__(self, base):
-        self.base = base
+        os.chdir(base)
+
+        self.checkpoint_dir = "checkpoint"
         try:
-            self.process = pexpect.spawn(os.path.join(self.base, "candle"), encoding='utf-8', logfile=sys.stdout)
+            self.process = pexpect.spawn("./candle", encoding='utf-8', logfile=sys.stdout)
         except Exception as e:
             raise StartFailure from e
 
@@ -89,6 +93,7 @@ class CandleREPL:
 
     def load(self, file):
         self.process.sendline(f'#use "{file}";;')
+        self._check_output()
 
         while self.load_stack:
             self._check_output()
@@ -97,10 +102,20 @@ class CandleREPL:
         self.process.close(force=True)
 
     def dump(self):
-        pass
+        os.makedirs(self.checkpoint_dir, exist_ok=True)
+        pid = self.process.pid
+        subprocess.run(
+            ["sudo", "criu", "dump", "-D", self.checkpoint_dir, "-t", str(pid), "--shell-job"],
+            check=True,
+        )
+        self.process.wait()
 
     def restore(self):
-        pass
+        self.process = pexpect.spawn(
+            "sudo", ["criu", "restore", "-D", self.checkpoint_dir, "--shell-job"],
+            encoding='utf-8',
+            logfile=sys.stdout,
+        )
 
-candle = CandleREPL()
+#candle = CandleREPL("/home/daniel/code/candles/candle")
 
