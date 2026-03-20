@@ -252,6 +252,8 @@ class CandleREPL:
             pass
         if hasattr(self, '_cake_pid'):
             subprocess.run(["pkill", "-9", "-g", str(self._cake_pid)])
+            while os.path.exists(f"/proc/{self._cake_pid}"):
+                time.sleep(0.1)
 
     def dump(self):
         os.makedirs(self.checkpoint_dir, exist_ok=True)
