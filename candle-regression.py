@@ -424,6 +424,8 @@ class TestRunner:
         except LoadFailure as e:
             elapsed = time.perf_counter() - start
             err = str(e)
+            if repl.load_stack:
+                err += f" [while loading: {' > '.join(repl.load_stack)}]"
             if repl.last_val:
                 err += f" (last val: {repl.last_val[0]})"
             if "Timeout" in str(e):
@@ -437,6 +439,8 @@ class TestRunner:
         except pexpect.TIMEOUT:
             elapsed = time.perf_counter() - start
             err = "Timeout"
+            if repl.load_stack:
+                err += f" [while loading: {' > '.join(repl.load_stack)}]"
             if repl.last_val:
                 err += f" (last val: {repl.last_val[0]})"
             if name in KNOWN_FAILURES:
@@ -451,6 +455,8 @@ class TestRunner:
         except Exception as e:
             elapsed = time.perf_counter() - start
             err = str(e)
+            if repl.load_stack:
+                err += f" [while loading: {' > '.join(repl.load_stack)}]"
             if repl.last_val:
                 err += f" (last val: {repl.last_val[0]})"
             if name in KNOWN_FAILURES:
