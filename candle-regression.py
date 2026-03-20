@@ -3,12 +3,20 @@ import pexpect
 import time
 import subprocess
 import os
+import signal
 import argparse
 import json
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from datetime import datetime
 
+def wait_group(pgid):
+    while True:
+        try:
+            os.killpg(pgid, 0)
+        except ProcessLookupError:
+            return
+        time.sleep(0.1)
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -252,8 +260,7 @@ class CandleREPL:
             pass
         if hasattr(self, '_cake_pid'):
             subprocess.run(["pkill", "-9", "-g", str(self._cake_pid)])
-            while os.path.exists(f"/proc/{self._cake_pid}"):
-                time.sleep(0.1)
+            wait_group(self._cake_pid)
 
     def dump(self):
         os.makedirs(self.checkpoint_dir, exist_ok=True)
