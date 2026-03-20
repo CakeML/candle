@@ -422,7 +422,9 @@ class TestRunner:
         except LoadFailure as e:
             elapsed = time.perf_counter() - start
             err = str(e)
-            if "Timeout" in err:
+            if repl.last_val:
+                err += f" (last val: {repl.last_val[0]})"
+            if "Timeout" in str(e):
                 status = TestStatus.TIMEOUT
             elif name in KNOWN_FAILURES:
                 status = TestStatus.XFAIL
@@ -432,24 +434,30 @@ class TestRunner:
 
         except pexpect.TIMEOUT:
             elapsed = time.perf_counter() - start
+            err = "Timeout"
+            if repl.last_val:
+                err += f" (last val: {repl.last_val[0]})"
             if name in KNOWN_FAILURES:
                 status = TestStatus.XFAIL
             else:
                 status = TestStatus.TIMEOUT
             return TestResult(
                 name=name, status=status,
-                elapsed=elapsed, error_message="Timeout",
+                elapsed=elapsed, error_message=err,
             )
 
         except Exception as e:
             elapsed = time.perf_counter() - start
+            err = str(e)
+            if repl.last_val:
+                err += f" (last val: {repl.last_val[0]})"
             if name in KNOWN_FAILURES:
                 status = TestStatus.XFAIL
             else:
                 status = TestStatus.FAIL
             return TestResult(
                 name=name, status=status,
-                elapsed=elapsed, error_message=str(e),
+                elapsed=elapsed, error_message=err,
             )
 
         finally:
