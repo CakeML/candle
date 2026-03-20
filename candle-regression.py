@@ -370,10 +370,11 @@ class Reporter:
 # ---------------------------------------------------------------------------
 
 class TestRunner:
-    def __init__(self, base_dir, timeout=600, verbose=False):
+    def __init__(self, base_dir, timeout=600, verbose=False, fail_fast=False):
         self.base_dir = base_dir
         self.timeout = timeout
         self.verbose = verbose
+        self.fail_fast = fail_fast
 
     def setup(self, reuse_checkpoint=False):
         """Start candle, load hol.ml, and dump a checkpoint."""
@@ -468,6 +469,9 @@ class TestRunner:
                 if result.error_message and result.status in (TestStatus.FAIL, TestStatus.TIMEOUT):
                     print(f"         {result.error_message}")
                 results.append(result)
+                if self.fail_fast and result.status in (TestStatus.FAIL, TestStatus.TIMEOUT):
+                    print("Stopping early due to --fail-fast.")
+                    break
         except KeyboardInterrupt:
             print("\nInterrupted — showing results so far.")
 
@@ -503,6 +507,10 @@ def main():
         help="Show verbose REPL output",
     )
     parser.add_argument(
+        "--fail-fast", action="store_true",
+        help="Stop after the first unexpected failure",
+    )
+    parser.add_argument(
         "--timeout", type=int, default=600,
         help="Per-test timeout in seconds (default: 600)",
     )
@@ -536,6 +544,7 @@ def main():
         base_dir=args.base_dir,
         timeout=args.timeout,
         verbose=args.verbose,
+        fail_fast=args.fail_fast,
     )
 
     # Setup checkpoint
