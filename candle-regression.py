@@ -26,6 +26,7 @@ class LoadFailure(Exception):
     """Loading a file failed."""
 
 
+
 # ---------------------------------------------------------------------------
 # Test status and result
 # ---------------------------------------------------------------------------
@@ -249,10 +250,15 @@ class CandleREPL:
             self.process.close(force=True)
         except Exception:
             pass
+        if hasattr(self, '_cake_pid'):
+            subprocess.run(["pkill", "-9", "-g", str(self._cake_pid)])
 
     def dump(self):
         os.makedirs(self.checkpoint_dir, exist_ok=True)
         pid = self.process.pid
+        pidfile = os.path.join(self.checkpoint_dir, "cake.pid")
+        with open(pidfile, "w") as f:
+            f.write(str(pid))
         subprocess.run(
             ["sudo", "criu", "dump", "-D", self.checkpoint_dir, "-t", str(pid), "--shell-job"],
             check=True,
@@ -266,6 +272,10 @@ class CandleREPL:
             encoding='utf-8',
             logfile=lf,
         )
+        # Assumption: CRIU restores processes with their original PIDs.
+        # Read the cake PID (saved during dump) so kill() can target it.
+        pidfile = os.path.join(self.checkpoint_dir, "cake.pid")
+        self._cake_pid = int(open(pidfile).read().strip())
 
 
 # ---------------------------------------------------------------------------
@@ -443,17 +453,6 @@ class TestRunner:
 
         finally:
             repl.kill()
-            self._cleanup_stuck_processes()
-
-    def _cleanup_stuck_processes(self):
-        """Kill any leftover cake --candle processes."""
-        try:
-            subprocess.run(
-                ["sudo", "pkill", "-f", "cake --candle"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
-        except Exception:
-            pass
 
     def run_all(self, tests):
         """Run all tests, printing progress inline."""
