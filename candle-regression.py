@@ -459,14 +459,17 @@ class TestRunner:
         results = []
         total = len(tests)
 
-        for i, name in enumerate(tests, 1):
-            print(f"[{i}/{total}] {name} ... ", end="", flush=True)
-            result = self.run_test(name)
-            sym = Reporter.STATUS_SYMBOLS[result.status]
-            print(f"{sym} ({result.elapsed:.1f}s)")
-            if result.error_message and result.status in (TestStatus.FAIL, TestStatus.TIMEOUT):
-                print(f"         {result.error_message}")
-            results.append(result)
+        try:
+            for i, name in enumerate(tests, 1):
+                print(f"[{i}/{total}] {name} ... ", end="", flush=True)
+                result = self.run_test(name)
+                sym = Reporter.STATUS_SYMBOLS[result.status]
+                print(f"{sym} ({result.elapsed:.1f}s)")
+                if result.error_message and result.status in (TestStatus.FAIL, TestStatus.TIMEOUT):
+                    print(f"         {result.error_message}")
+                results.append(result)
+        except KeyboardInterrupt:
+            print("\nInterrupted — showing results so far.")
 
         return results
 
