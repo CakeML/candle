@@ -140,7 +140,7 @@ class CandleREPL:
             case 1:
                 self.last_val = self._get_match(1)
             case 2 | 3 | 4:
-                raise LoadFailure(self._get_match(1))
+                raise LoadFailure(f"{self._get_match(1)} [while loading: {' > '.join(self.load_stack)}]")
             case 5:
                 finished = self._get_match(1)
                 expected = self.load_stack.pop()
