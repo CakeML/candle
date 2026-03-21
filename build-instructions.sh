@@ -15,6 +15,12 @@ cd cake-x64-64 && make && cd ..
 # Copy the compiler binary and the exported compiler state into this directory:
 cp cake-x64-64/cake cake-x64-64/config_enc_str.txt .
 
+# Create the types.txt file necessary for candle_insulate.py
+./cake --types < /dev/null
+
+# Generate candle_insulate.ml
+python candle_insulate.py types.txt candle_insulate.ml
+
 # You can now run Candle by writing:
 #   $ ./cake --candle
 # or:

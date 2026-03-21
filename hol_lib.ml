@@ -20,7 +20,7 @@ open Hol_loader;;
 (* compatiblity layer.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-loads "candle_insulate.ml";;  (* Move most of CakeML to Cake module.         *)
+loads "candle_insulate.ml";;  (* Auto-generated. Moves CakeML specifics.     *)
 loads "candle_nums.ml";;      (* Load "num".                                 *)
 loads "candle_pretty.ml";;    (* Pretty printer code.                        *)
 loads "candle_ocaml.ml";;     (* OCaml modules.                              *)
