@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Set up Candle
 ./build-instructions.sh
