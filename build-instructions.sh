@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Get the 64-bit CakeML compiler from here:
-curl -OL https://cakeml.org/regression/artefacts/3149/cake-x64-64.tar.gz
+#curl -OL https://cakeml.org/regression/artefacts/3149/cake-x64-64.tar.gz
 tar xvzf cake-x64-64.tar.gz
 
 # By default, the CakeML compiler reserves a few kilobytes for constants and

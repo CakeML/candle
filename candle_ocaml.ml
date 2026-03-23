@@ -28,7 +28,7 @@ let close_in fd = Text_io.closeIn fd;;
 let close_out fd = Text_io.closeOut fd;;
 
 let input_line fd =
-  match Text_io.inputLine '\n' fd with
+  match Text_io.inputLine fd with
   | Some l -> l
   | None -> raise End_of_file
 ;;

@@ -118,6 +118,9 @@ class CandleREPL:
     def _get_match(self, idx):
         return self.process.match.group(idx)
 
+    def load_stack_str(self):
+        f"[while loading: {' > '.join(self.load_stack)}]"
+
     def _check_output(self, timeout=600):
         try:
             index = self.process.expect([
@@ -140,15 +143,15 @@ class CandleREPL:
             case 1:
                 self.last_val = self._get_match(1)
             case 2 | 3 | 4:
-                raise LoadFailure(f"{self._get_match(1)} [while loading: {' > '.join(self.load_stack)}]")
+                raise LoadFailure(f"{self._get_match(1)} {self.load_stack_str()}")
             case 5:
                 finished = self._get_match(1)
                 expected = self.load_stack.pop()
                 assert finished == expected, f'Expected to finish loading {expected}. Actual: {finished}'
             case 6:
-                raise LoadFailure("Timeout waiting for output")
+                raise LoadFailure(f"Timeout waiting for output {self.load_stack_str()}")
             case 7:
-                raise LoadFailure("Process exited unexpectedly")
+                raise LoadFailure(f"Process exited unexpectedly {self.load_stack_str()}")
             case _:
                 assert False, "Unreachable: Did you add a new case in _check_output?"
 
@@ -307,7 +310,7 @@ class TestRunner:
             elapsed = time.perf_counter() - start
             err = str(e)
             if repl.load_stack:
-                err += f" [while loading: {' > '.join(repl.load_stack)}]"
+                err += f" {repl.load_stack_str()}"
             if repl.last_val:
                 err += f" (last val: {repl.last_val})"
             if "Timeout" in str(e):
@@ -321,7 +324,7 @@ class TestRunner:
             elapsed = time.perf_counter() - start
             err = "Timeout"
             if repl.load_stack:
-                err += f" [while loading: {' > '.join(repl.load_stack)}]"
+                err += f" {repl.load_stack_str()}"
             if repl.last_val:
                 err += f" (last val: {repl.last_val})"
             else:
@@ -335,7 +338,7 @@ class TestRunner:
             elapsed = time.perf_counter() - start
             err = str(e)
             if repl.load_stack:
-                err += f" [while loading: {' > '.join(repl.load_stack)}]"
+                err += f" {repl.load_stack_str()}"
             if repl.last_val:
                 err += f" (last val: {repl.last_val})"
             else:
