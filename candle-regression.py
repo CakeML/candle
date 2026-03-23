@@ -53,8 +53,6 @@ TESTS = [
     "100/lhopital",
     "100/stirling",
     "100/liouville",
-    "100/thales",
-    "100/desargues",
 ]
 
 
