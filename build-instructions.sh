@@ -1,4 +1,5 @@
 #!/bin/sh
+set -euo pipefail
 
 # Get the 64-bit CakeML compiler from here:
 #curl -OL https://cakeml.org/regression/artefacts/3149/cake-x64-64.tar.gz
