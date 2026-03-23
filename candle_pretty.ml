@@ -34,13 +34,13 @@ module App_list = struct
   let rec map f l =
     match l with
     | Nil -> Nil
-    | List xs -> List (List.map f xs)
+    | List xs -> List (Cake.List.map f xs)
     | Append (l, r) -> Append (map f l, map f r) ;;
 
   let rec iter f l =
     match l with
     | Nil -> ()
-    | List xs -> List.app f xs
+    | List xs -> Cake.List.app f xs
     | Append (l, r) ->
         iter f l;
         iter f r
@@ -55,10 +55,10 @@ module App_list = struct
   let rec concat_aux sofar l =
     match l with
     | Nil -> sofar
-    | List xs -> String.concat xs :: sofar
+    | List xs -> Cake.String.concat xs :: sofar
     | Append (l, r) -> concat_aux (concat_aux sofar r) l ;;
 
-  let concat l = String.concat (concat_aux [] l) ;;
+  let concat l = Cake.String.concat (concat_aux [] l) ;;
 
 end;; (* struct *)
 
@@ -91,7 +91,7 @@ module Pretty_core = struct
     let space = ref margin in
     let blanks n =
       space := !space - n;
-      App_list.list (List.tabulate n (fun _ -> " ")) in
+      App_list.list (Cake.List.tabulate n (fun _ -> " ")) in
     let newline () =
       space := margin;
       App_list.list ["\n"] in
@@ -149,7 +149,7 @@ module Pretty_core = struct
       | String (_, len) -> len
       | Break (len, _) -> len
       | Newline -> 0 in
-    let sum = List.foldl (fun t s -> s + length t) 0 in
+    let sum = Cake.List.foldl (fun t s -> s + length t) 0 in
     fun typ indent toks -> Block (typ, toks, indent, sum toks)
   ;;
 
@@ -194,10 +194,10 @@ module Pretty_imp = struct
 
   let tq_to_block (Token_queue (ts, ind, typ)) =
     match typ with
-    | H_block -> Pretty_core.hblock (List.rev ts)
-    | Hv_block -> Pretty_core.hvblock ind (List.rev ts)
-    | V_block -> Pretty_core.vblock ind (List.rev ts)
-    | C_block -> Pretty_core.block ind (List.rev ts)
+    | H_block -> Pretty_core.hblock (Cake.List.rev ts)
+    | Hv_block -> Pretty_core.hvblock ind (Cake.List.rev ts)
+    | V_block -> Pretty_core.vblock ind (Cake.List.rev ts)
+    | C_block -> Pretty_core.block ind (Cake.List.rev ts)
   ;;
 
   type state =
@@ -224,7 +224,7 @@ module Pretty_imp = struct
   let print_as st l str = st_insert st (Pretty_core.string str l)
   ;;
 
-  let print_string st str = print_as st (String.size str) str
+  let print_string st str = print_as st (Cake.String.size str) str
   ;;
 
   let print_break st l i = st_insert st (Pretty_core.break l i)
@@ -312,48 +312,3 @@ module Pretty = struct
     App_list.concat apps;;
 
 end;; (* struct *)
-
-(* -------------------------------------------------------------------------
-   format.ml compatibility layer
-   ------------------------------------------------------------------------- *)
-
-let set_margin n =
-  if n < 1 then failwith "set_margin: must be positive";
-  Pretty.margin := n
-;;
-
-type formatter = Pretty_imp.state;;
-
-let pp_print_as = Pretty_imp.print_as;;
-let pp_print_string = Pretty_imp.print_string;;
-let pp_print_break = Pretty_imp.print_break;;
-let pp_print_space fmt () = Pretty_imp.print_space fmt;;
-let pp_print_newline fmt () = Pretty_imp.print_newline fmt;;
-
-let pp_open_box = Pretty_imp.open_block;;
-let pp_open_hbox fmt () = Pretty_imp.open_hblock fmt;;
-let pp_open_vbox = Pretty_imp.open_vblock;;
-let pp_open_hvbox = Pretty_imp.open_hvblock;;
-let pp_close_box fmt () = Pretty_imp.close_block fmt;;
-
-let pp_get_max_boxes (fmt:formatter) () =
-  remark "TODO: stub called: pp_get_max_boxes"; -1;;
-let pp_set_max_boxes (fmt:formatter) (i:int) =
-  remark "TODO: stub called: pp_set_max_boxes";;
-
-let print_to_string = Pretty.print_to_string;;
-
-(* Functions that print to stdout: *)
-
-let print_string = Pretty.print_stdout pp_print_string;;
-let print_break l i =
-  Pretty.print_stdout (fun s (l,i) -> pp_print_break s l i) (l, i);;
-let print_space () = Pretty.print_stdout pp_print_space ();;
-let print_newline () = Pretty.print_stdout pp_print_newline ();;
-let print_endline s = print_string s; print_newline ();;
-
-let open_box = Pretty.print_stdout pp_open_box;;
-let open_hbox () = Pretty.print_stdout pp_open_hbox ();;
-let open_vbox = Pretty.print_stdout pp_open_vbox;;
-let open_hvbox = Pretty.print_stdout pp_open_hvbox;;
-let close_box () = Pretty.print_stdout pp_close_box ();;

@@ -114,7 +114,7 @@ let subst =
     try fst (find ((aconv tm) o snd) ilist) with Failure _ ->
     match tm with
       Comb(f,x) -> let f' = ssubst ilist f and x' = ssubst ilist x in
-                   if f' == f && x' == x then tm else mk_comb(f',x')
+                   (* if f' == f && x' == x then tm else *) mk_comb(f',x')
     | Abs(v,bod) ->
           let ilist' = filter (not o (vfree_in v) o snd) ilist in
           mk_abs(v,ssubst ilist' bod)
@@ -126,7 +126,7 @@ let subst =
     fun tm ->
       let gs = variants (variables tm) (map (genvar o type_of) xs) in
       let tm' = ssubst (zip gs xs) tm in
-      if tm' == tm then tm else vsubst (zip ts gs) tm';;
+      (* if tm' == tm then tm else *) vsubst (zip ts gs) tm';;
 
 (* ------------------------------------------------------------------------- *)
 (* Alpha conversion term operation.                                          *)
@@ -451,6 +451,7 @@ let follow_path =
 (* Considering a term as a propositional formula and returning atoms.        *)
 (* ------------------------------------------------------------------------- *)
 
+(*
 let atoms =
   let rec atoms acc tm =
     match tm with
@@ -461,6 +462,6 @@ let atoms =
           atoms (atoms acc l) r
     | Comb(Const("~",_),l) -> atoms acc l
     | _ -> (tm |-> ()) acc in
-  let f = fun x y -> Equal in  (* HACK(daniel): Not sure whether this is ok. *)
   fun tm -> if type_of tm <> bool_ty then failwith "atoms: not Boolean"
-            else foldl (fun a x y -> x::a) [] (atoms (undefined f) tm);;
+            else foldl (fun a x y -> x::a) [] (atoms undefined tm);;
+*)

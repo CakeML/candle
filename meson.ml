@@ -82,7 +82,7 @@ module Meson = struct
 
   let qpartition p m =
     let rec qpartition l =
-      if l == m then raise Unchanged else
+      (* if l == m then raise Unchanged else *)
       match l with
         [] -> raise Unchanged
       | (h::t) -> if p h then
@@ -204,12 +204,12 @@ module Meson = struct
     match tm with
       Fvar v -> rev_assocd v theta tm
     | Fnapp(f,args) ->
-          let args' = qmap (fol_subst theta) args in
-          if args' == args then tm else Fnapp(f,args')
+          let args' = map (fol_subst theta) args in
+          (* if args' == args then tm else *) Fnapp(f,args')
 
   let fol_inst theta ((p,args) as at:fol_atom) =
-    let args' = qmap (fol_subst theta) args in
-    if args' == args then at else p,args'
+    let args' = map (fol_subst theta) args in
+    (* if args' == args then at else *) p,args'
 
   let rec fol_subst_bump offset theta tm =
     match tm with
@@ -219,12 +219,12 @@ module Meson = struct
                else
                  rev_assocd v theta tm
     | Fnapp(f,args) ->
-          let args' = qmap (fol_subst_bump offset theta) args in
-          if args' == args then tm else Fnapp(f,args')
+          let args' = map (fol_subst_bump offset theta) args in
+          (* if args' == args then tm else *) Fnapp(f,args')
 
   let fol_inst_bump offset theta ((p,args) as at:fol_atom) =
-    let args' = qmap (fol_subst_bump offset theta) args in
-    if args' == args then at else p,args'
+    let args' = map (fol_subst_bump offset theta) args in
+    (* if args' == args then at else *) p,args'
 
   (* ----------------------------------------------------------------------- *)
   (* Main unification function, maintaining a "graph" instantiation.         *)
@@ -264,7 +264,7 @@ module Meson = struct
   (* ----------------------------------------------------------------------- *)
 
   let rec fol_eq insts tm1 tm2 =
-    tm1 == tm2 ||
+    (* tm1 == tm2 || *)
     match tm1,tm2 with
       Fnapp(f,fargs),Fnapp(g,gargs) ->
           f = g && forall2 (fol_eq insts) fargs gargs
@@ -452,24 +452,25 @@ module Meson = struct
       Interrupt.poll ();
       if n > max then failwith "solve_goal: Too deep" else
       (if !meson_chatty && !verbose then
-        (print
+        (Format.print_string
           ((string_of_int (!inferences))^" inferences so far. "^
               "Searching with maximum size "^(string_of_int n)^".");
-         print"\n")
+         Format.print_newline())
        else if !verbose then
-        print(string_of_int (!inferences)^"..")
+        (Format.print_string(string_of_int (!inferences)^"..");
+         Format.print_flush())
        else ());
       try let gi =
             if incdepth then expand_goal rules g n 100000 (fun x -> x)
             else expand_goal rules g 100000 n (fun x -> x) in
           (if !meson_chatty && !verbose then
-            (print
+            (Format.print_string
               ("Goal solved with "^(string_of_int (!inferences))^
                " inferences.");
-             print"\n")
+             Format.print_newline())
            else if !verbose then
-            (print("solved at "^string_of_int (!inferences));
-             print"\n")
+            (Format.print_string("solved at "^string_of_int (!inferences));
+             Format.print_newline())
            else ());
           gi
       with Failure _ -> solve (n + incsize) g in
@@ -500,7 +501,7 @@ module Meson = struct
       else basics in
     fun thms ->
       let rawrules = itlist (union' eqt o fol_of_hol_clause) thms [] in
-      let prs = setify Int.(<) (map (fst o snd o fst) rawrules) in
+      let prs = setify (<) (map (fst o snd o fst) rawrules) in
       let prules =
         map (fun t -> t,filter ((=) t o fst o snd o fst) rawrules) prs in
       let srules = sort (fun (p,_) (q,_) -> abs(p) <= abs(q)) prules in
@@ -734,7 +735,7 @@ module Meson = struct
         match l with
           x::(y::_ as t) -> let t' = uniq' eq t in
                               if eq x y then t' else
-                              if t'==t then l else x::t'
+                              (* if t'==t then l else *) x::t'
         | _ -> l in
     let setify' le eq s = uniq' eq (sort le s) in
     let rec grab_constants tm acc =
@@ -756,7 +757,8 @@ module Meson = struct
       let tyins = mapfilter match_consts
         (allpairs (fun x y -> x,y) pconsts mconsts) in
       let ths' =
-        setify' Thm.(<) equals_thm (mapfilter (C INST_TYPE th) tyins) in
+        setify' Thm.(<=)
+                equals_thm (mapfilter (C INST_TYPE th) tyins) in
       if ths' = [] then
         (warn true "No useful-looking instantiations of lemma"; [th])
       else ths' in
@@ -846,7 +848,14 @@ let ASM_MESON_TAC = GEN_MESON_TAC 0 50 1;;
 let MESON_TAC ths = POP_ASSUM_LIST(K ALL_TAC) THEN ASM_MESON_TAC ths;;
 
 (* ------------------------------------------------------------------------- *)
-(* Also introduce a rule.                                                  *)
+(* Also introduce a rule.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-let MESON ths tm = prove(tm,MESON_TAC ths);;
+let MESON ths tm =
+  let th = TAC_PROOF(([],tm),MESON_TAC ths) in
+  let asl,tm' = dest_thm th in
+  if asl <> [] && not(subset asl (unions (map hyp ths)))
+  then failwith "MESON: too many assumptions in result"
+  else if tm' = tm then th else
+  try EQ_MP (ALPHA tm' tm) th
+  with Failure _ -> failwith "MESON: the wrong result";;

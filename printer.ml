@@ -16,7 +16,7 @@ needs "nets.ml";;
 (* ------------------------------------------------------------------------- *)
 
 let isspace,issep,isbra,issymb,isalpha,isnum,isalnum =
-  let charcode s = Char.ord (String.sub s 0) in
+  let charcode s = Char.code(String.get s 0) in
   let spaces = " \t\n\r"
   and separators = ",;"
   and brackets = "()[]{}"
@@ -25,20 +25,20 @@ let isspace,issep,isbra,issymb,isalpha,isnum,isalnum =
   and nums = "0123456789" in
   let allchars = spaces^separators^brackets^symbs^alphas^nums in
   let csetsize = itlist (max o charcode) (explode allchars) 256 in
-  let ctable = Array.array csetsize 0 in
-  do_list (fun c -> Array.update ctable (charcode c) 1) (explode spaces);
-  do_list (fun c -> Array.update ctable (charcode c) 2) (explode separators);
-  do_list (fun c -> Array.update ctable (charcode c) 4) (explode brackets);
-  do_list (fun c -> Array.update ctable (charcode c) 8) (explode symbs);
-  do_list (fun c -> Array.update ctable (charcode c) 16) (explode alphas);
-  do_list (fun c -> Array.update ctable (charcode c) 32) (explode nums);
-  let isspace c = Array.sub ctable (charcode c) = 1
-  and issep c  = Array.sub ctable (charcode c) = 2
-  and isbra c  = Array.sub ctable (charcode c) = 4
-  and issymb c = Array.sub ctable (charcode c) = 8
-  and isalpha c = Array.sub ctable (charcode c) = 16
-  and isnum c = Array.sub ctable (charcode c) = 32
-  and isalnum c = Array.sub ctable (charcode c) >= 16 in
+  let ctable = Array.make csetsize 0 in
+  do_list (fun c -> Array.set ctable (charcode c) 1) (explode spaces);
+  do_list (fun c -> Array.set ctable (charcode c) 2) (explode separators);
+  do_list (fun c -> Array.set ctable (charcode c) 4) (explode brackets);
+  do_list (fun c -> Array.set ctable (charcode c) 8) (explode symbs);
+  do_list (fun c -> Array.set ctable (charcode c) 16) (explode alphas);
+  do_list (fun c -> Array.set ctable (charcode c) 32) (explode nums);
+  let isspace c = Array.get ctable (charcode c) = 1
+  and issep c  = Array.get ctable (charcode c) = 2
+  and isbra c  = Array.get ctable (charcode c) = 4
+  and issymb c = Array.get ctable (charcode c) = 8
+  and isalpha c = Array.get ctable (charcode c) = 16
+  and isnum c = Array.get ctable (charcode c) = 32
+  and isalnum c = Array.get ctable (charcode c) >= 16 in
   isspace,issep,isbra,issymb,isalpha,isnum,isalnum;;
 
 (* ------------------------------------------------------------------------- *)
@@ -84,7 +84,7 @@ let unparse_as_prefix,parse_as_prefix,is_prefix,prefixes =
 
 let unparse_as_infix,parse_as_infix,get_infix_status,infixes =
   let cmp (s,(x,a)) (t,(y,b)) =
-     x < y || x = y && String.(>) a b || x = y && a = b && String.(<) s t in
+     x < y || x = y && Cake.String.(>) a b || x = y && a = b && Cake.String.(<) s t in
   let infix_list = ref ([]:(string * (int * string)) list) in
   (fun n     -> infix_list := filter (((<>) n) o fst) (!infix_list)),
   (fun (n,d) -> infix_list := sort cmp
@@ -103,6 +103,38 @@ let the_overload_skeletons = ref ([] : (string * hol_type) list);;
 (* ------------------------------------------------------------------------- *)
 (* Now the printer.                                                          *)
 (* ------------------------------------------------------------------------- *)
+
+(*
+include Format;;
+*)
+type formatter = Format.formatter;;
+let set_margin n = Format.set_margin n;;
+let pp_print_as = Format.pp_print_as;;
+let pp_print_string = Format.pp_print_string;;
+let pp_print_break = Format.pp_print_break;;
+let pp_print_space fmt () = Format.pp_print_space fmt ();;
+let pp_print_newline fmt () = Format.pp_print_newline fmt ();;
+
+let pp_open_box = Format.pp_open_box;;
+let pp_open_hbox fmt () = Format.pp_open_hbox fmt ();;
+let pp_open_vbox = Format.pp_open_vbox;;
+let pp_open_hvbox = Format.pp_open_hvbox;;
+let pp_close_box fmt () = Format.pp_close_box fmt ();;
+
+let pp_get_max_boxes fmt () = Format.pp_get_max_boxes fmt ();;
+let pp_set_max_boxes fmt i = Format.pp_set_max_boxes fmt i;;
+let set_max_boxes i = Format.set_max_boxes i;;
+
+let print_break l i = Format.print_break l i;;
+let print_space () = Format.print_space ();;
+
+let open_box = Format.open_box;;
+let open_hbox () = Format.open_hbox ();;
+let open_vbox = Format.open_vbox;;
+let open_hvbox = Format.open_hvbox;;
+let close_box () = Format.close_box ();;
+
+set_max_boxes 100;;
 
 (* ------------------------------------------------------------------------- *)
 (* Flag determining whether interface/overloading is reversed on printing.   *)
@@ -347,8 +379,8 @@ let pp_print_term,pp_print_colored_term =
       try (let tms = dest_list tm in
            try if fst(dest_type(hd(snd(dest_type(type_of tm))))) <> "char"
                then fail() else
-               let ccs = map (String.str o Char.chr o code_of_term) tms in
-               let s = "\"" ^ string_escaped (implode ccs) ^ "\"" in
+               let ccs = map (String.make 1 o Char.chr o code_of_term) tms in
+               let s = "\"" ^ String.escaped (implode ccs) ^ "\"" in
                pp_print_string fmt s
            with Failure _ ->
                pp_open_box fmt 0; pp_print_string fmt "[";
@@ -450,7 +482,7 @@ let pp_print_term,pp_print_colored_term =
       with Failure _ ->
       if s = "COND" && length args = 3 then
         ((if prec = 0 then () else pp_print_string fmt "(");
-         pp_open_hvbox fmt (-1);
+         pp_open_hvbox fmt (~-1);
          (let ccls,ecl = splitlist pdest_cond tm in
           if length ccls <= 4 then
            (color_switch pp_print_colored_resword fmt "if ";
@@ -523,7 +555,7 @@ let pp_print_term,pp_print_colored_term =
         let s' = if parses_as_binder s || can get_infix_status s || is_prefix s
                  then "("^s^")" else s in
         let rec has_invented_typevar (ty:hol_type): bool =
-          if is_vartype ty then (dest_vartype ty).[0] = '?'
+          if is_vartype ty then String.get (dest_vartype ty) 0 = '?'
           else List.exists has_invented_typevar (snd (dest_type ty)) in
         if !print_types_of_subterms = 2 ||
            (!print_types_of_subterms = 1 && has_invented_typevar (type_of hop))
@@ -676,9 +708,25 @@ let print_thm = Pretty.print_stdout pp_print_thm;;
 (* Conversions to string.                                                    *)
 (* ------------------------------------------------------------------------- *)
 
-let string_of_type = print_to_string pp_print_type;;
-let string_of_term = print_to_string pp_print_term;;
-let string_of_thm = print_to_string pp_print_thm;;
+(*
+let print_to_string printer =
+  let buf = Buffer.create 16 in
+  let fmt = formatter_of_buffer buf in
+  let () = pp_set_max_boxes fmt 100 in
+  let print = printer fmt in
+  let flush = pp_print_flush fmt in
+  fun x ->
+    let () = pp_set_margin fmt (get_margin ()) in
+    let () = print x in
+    let () = flush () in
+    let s = Buffer.contents buf in
+    let () = Buffer.reset buf in
+    s;;
+*)
+
+let string_of_type = Pretty.print_to_string pp_print_type;;
+let string_of_term = Pretty.print_to_string pp_print_term;;
+let string_of_thm = Pretty.print_to_string pp_print_thm;;
 
 (* ------------------------------------------------------------------------- *)
 (* Install printers for term, type and thm.                                  *)

@@ -57,7 +57,7 @@ end;;
 
 type num =
   | Int of int
-  | Rat of rat
+  | Rat of Cake.Rat.rat
 ;;
 
 let pp_num n =
@@ -73,22 +73,22 @@ type num = num;;
 let denominator n =
   match n with
   | Int i -> Int 1
-  | Rat r -> Int (Rat.denominator r)
+  | Rat r -> Int (Cake.Rat.denominator r)
 ;;
 
 let numerator n =
   match n with
   | Int i -> n
-  | Rat r -> Int (Rat.numerator r)
+  | Rat r -> Int (Cake.Rat.numerator r)
 ;;
 
 let num_fix n =
   match n with
   | Int i -> n
   | Rat r ->
-      if Rat.denominator r = 1 then
-        Int (Rat.numerator r)
-      else if Rat.denominator r = 0 then
+      if Cake.Rat.denominator r = 1 then
+        Int (Cake.Rat.numerator r)
+      else if Cake.Rat.denominator r = 0 then
         failwith "num_fix: division by zero"
       else n
 ;;
@@ -96,15 +96,15 @@ let num_fix n =
 let abs_num n =
   match n with
   | Int i -> Int (abs i)
-  | Rat r -> Rat (Rat.(/) (Rat.fromInt (abs (Rat.numerator r)))
-                          (Rat.fromInt (Rat.denominator r)))
+  | Rat r -> Rat (Cake.Rat.(/) (Cake.Rat.fromInt (abs (Cake.Rat.numerator r)))
+                          (Cake.Rat.fromInt (Cake.Rat.denominator r)))
 ;;
 
 let sign_num n =
-  let sign i = if i < 0 then -1 else if i > 0 then 1 else 0 in
+  let sign i = if i < 0 then ~-1 else if i > 0 then 1 else 0 in
   match n with
   | Int i -> sign i
-  | Rat r -> sign (Rat.numerator r)
+  | Rat r -> sign (Cake.Rat.numerator r)
 ;;
 
 (* The Rat type operations normalize results *)
@@ -117,30 +117,30 @@ let num_of_int i = Int i
 let int_of_num n =
   match n with
   | Int i -> i
-  | Rat r -> Rat.numerator r / Rat.denominator r
+  | Rat r -> Cake.Rat.numerator r / Cake.Rat.denominator r
 ;;
 
 let string_of_num n =
   match n with
   | Int i -> string_of_int i
   | Rat r ->
-      let n = Rat.numerator r in
-      let d = Rat.denominator r in
+      let n = Cake.Rat.numerator r in
+      let d = Cake.Rat.denominator r in
       string_of_int n ^ "/" ^ string_of_int d
 ;;
 
 let minus_num n =
   match n with
-  | Int i -> Int (-i)
+  | Int i -> Int (~-i)
   | Rat r -> Rat (rat_minus r)
 ;;
 
 let (+/) x y =
   match x, y with
   | Int i, Int j -> Int (i + j)
-  | Int i, Rat r -> Rat (Rat.(+) (Rat.fromInt i) r)
-  | Rat r, Int i -> Rat (Rat.(+) r (Rat.fromInt i))
-  | Rat i, Rat j -> Rat (Rat.(+) i j)
+  | Int i, Rat r -> Rat (Cake.Rat.(+) (Cake.Rat.fromInt i) r)
+  | Rat r, Int i -> Rat (Cake.Rat.(+) r (Cake.Rat.fromInt i))
+  | Rat i, Rat j -> Rat (Cake.Rat.(+) i j)
 ;;
 let (+/) x y = num_fix (x +/ y);;
 let add_num = (+/);;
@@ -148,9 +148,9 @@ let add_num = (+/);;
 let (-/) x y =
   match x, y with
   | Int i, Int j -> Int (i - j)
-  | Int i, Rat r -> Rat (Rat.(-) (Rat.fromInt i) r)
-  | Rat r, Int i -> Rat (Rat.(-) r (Rat.fromInt i))
-  | Rat i, Rat j -> Rat (Rat.(-) i j)
+  | Int i, Rat r -> Rat (Cake.Rat.(-) (Cake.Rat.fromInt i) r)
+  | Rat r, Int i -> Rat (Cake.Rat.(-) r (Cake.Rat.fromInt i))
+  | Rat i, Rat j -> Rat (Cake.Rat.(-) i j)
 ;;
 let (-/) x y = num_fix (x -/ y);;
 let sub_num = (-/);;
@@ -158,19 +158,19 @@ let sub_num = (-/);;
 let ( */) x y =
   match x, y with
   | Int i, Int j -> Int (i * j)
-  | Int i, Rat r -> Rat (Rat.( * ) (Rat.fromInt i) r)
-  | Rat r, Int i -> Rat (Rat.( * ) r (Rat.fromInt i))
-  | Rat i, Rat j -> Rat (Rat.( * ) i j)
+  | Int i, Rat r -> Rat (Cake.Rat.( * ) (Cake.Rat.fromInt i) r)
+  | Rat r, Int i -> Rat (Cake.Rat.( * ) r (Cake.Rat.fromInt i))
+  | Rat i, Rat j -> Rat (Cake.Rat.( * ) i j)
 ;;
 let ( */) x y = num_fix (x */ y);;
 let mul_num = ( */);;
 
 let (//) x y =
   match x, y with
-  | Int i, Int j -> Rat (Rat.(/) (Rat.fromInt i) (Rat.fromInt j))
-  | Int i, Rat r -> Rat (Rat.(/) (Rat.fromInt i) r)
-  | Rat r, Int i -> Rat (Rat.(/) r (Rat.fromInt i))
-  | Rat i, Rat j -> Rat (Rat.(/) i j)
+  | Int i, Int j -> Rat (Cake.Rat.(/) (Cake.Rat.fromInt i) (Cake.Rat.fromInt j))
+  | Int i, Rat r -> Rat (Cake.Rat.(/) (Cake.Rat.fromInt i) r)
+  | Rat r, Int i -> Rat (Cake.Rat.(/) r (Cake.Rat.fromInt i))
+  | Rat i, Rat j -> Rat (Cake.Rat.(/) i j)
 ;;
 let (//) x y = num_fix (x // y);;
 let div_num = (//);;
@@ -216,15 +216,15 @@ let ( **/) = power_num;;
 let floor_num n =
   match n with
   | Int i -> n
-  | Rat r -> Int (Rat.numerator r / Rat.denominator r)
+  | Rat r -> Int (Cake.Rat.numerator r / Cake.Rat.denominator r)
 ;;
 
 let compare x y =
   match x, y with
-  | Int i, Int j -> Int.compare i j
-  | Int i, Rat r -> Rat.compare (Rat.fromInt i) r
-  | Rat r, Int j -> Rat.compare r (Rat.fromInt j)
-  | Rat i, Rat j -> Rat.compare i j
+  | Int i, Int j -> Cake.Int.compare i j
+  | Int i, Rat r -> Cake.Rat.compare (Cake.Rat.fromInt i) r
+  | Rat r, Int j -> Cake.Rat.compare r (Cake.Rat.fromInt j)
+  | Rat i, Rat j -> Cake.Rat.compare i j
 ;;
 
 let ( </) x y = compare x y = Less;;
@@ -244,7 +244,7 @@ let min_num x y = if x <=/ y then x else y;;
 let max_num x y = if x >=/ y then x else y;;
 let gcd_num x y =
   match x, y with
-  | Int i, Int j -> Int (abs (Int.gcd i j))
+  | Int i, Int j -> Int (abs (Cake.Int.gcd i j))
 ;;
 
 let succ_num n = Int 1 +/ n;;

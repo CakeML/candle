@@ -7,7 +7,7 @@
 (*              (c) Copyright, John Harrison 1998-2007                       *)
 (* ========================================================================= *)
 
-needs "pair.ml";;
+needs "compute.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Declare a new type "ind" of individuals.                                  *)
@@ -254,7 +254,7 @@ let is_numeral = can dest_numeral;;
 let the_specifications = ref ([]: ((string list * thm) * thm) list);;
 
 let new_specification =
-  let code c = mk_small_numeral (Char.ord (String.sub c 0)) in
+  let code c = mk_small_numeral (Char.code (c.[0])) in
   let mk_code name =
       end_itlist (curry mk_pair) (map code (explode name)) in
   let check_distinct l =
@@ -283,7 +283,7 @@ let new_specification =
       failwith "new_specification: Assumptions not allowed in theorem" else
     if not (frees c = []) then
       failwith ("new_specification: Free variables in predicate: " ^
-        (String.concatWith ", " (map (fun (Var (name,_)) -> name) (frees c)))) else
+        (String.concat ", " (map (fun (Var (name,_)) -> name) (frees c)))) else
     let avs = fst(strip_exists c) in
     if length names = 0 || length names > length avs then
       failwith "new_specification: Unsuitable number of constant names" else

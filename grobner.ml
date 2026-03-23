@@ -179,9 +179,9 @@ let RING_AND_IDEAL_CONV =
       p,[] -> false
     | [],q -> true
     | (c1,m1)::o1,(c2,m2)::o2 ->
+       let m1_lt_m2 = List.compare Int.compare m1 m2 < 0in
           c1 </ c2 ||
-          c1 =/ c2 && (List.compare Int.compare m1 m2 = Less ||
-                       m1 = m2 && poly_lt o1 o2) in
+          c1 =/ c2 && (m1_lt_m2 || m1 = m2 && poly_lt o1 o2) in
 
   let align ((p,hp),(q,hq)) =
     if poly_lt p q then ((p,hp),(q,hq)) else ((q,hq),(p,hp)) in
@@ -215,9 +215,9 @@ let RING_AND_IDEAL_CONV =
   (* ----------------------------------------------------------------------- *)
 
   let rec grobner_basis basis pairs =
-    print(string_of_int(length basis)^" basis elements and "^
-          string_of_int(length pairs)^" critical pairs");
-    print "\n";
+    Format.print_string(string_of_int(length basis)^" basis elements and "^
+                        string_of_int(length pairs)^" critical pairs");
+    Format.print_newline();
     match pairs with
       [] -> basis
     | (l,(p1,p2))::opairs ->
@@ -275,7 +275,8 @@ let RING_AND_IDEAL_CONV =
 
   let rec resolve_proof vars prf =
     match prf with
-      Start m -> if m = -1 then [] else [m,[num_1,map (K 0) vars]]
+      Start(-1) -> []
+    | Start m -> [m,[num_1,map (K 0) vars]]
     | Mmul(pol,lin) ->
           let lis = resolve_proof vars lin in
           map (fun (n,p) -> n,grob_cmul pol p) lis
@@ -489,8 +490,8 @@ let RING_AND_IDEAL_CONV =
         | (x,y)::t -> if x==a then y else assoceq a t in *)
       let run_proof =
         if is_iff(snd(strip_forall(concl RABINOWITSCH_THM))) then
-         (print "Generating HOL version of proof";
-          print "\n";
+         (Format.print_string("Generating HOL version of proof");
+          Format.print_newline();
           let execache = ref [] in
           let memoize prf x = (execache := (prf,x)::(!execache)); x in
           let rec run_proof vars prf =
@@ -505,8 +506,8 @@ let RING_AND_IDEAL_CONV =
             let ans = run_proof vars prf in
             (execache := []; ans))
         else
-         (print "Generating HOL version of scaled proof";
-          print "\n";
+         (Format.print_string("Generating HOL version of scaled proof");
+          Format.print_newline();
           let km = map (fun x -> 0) vars in
           let execache = ref [] in
           let memoize prf x = (execache := (prf,x)::(!execache)); x in
@@ -559,8 +560,8 @@ let RING_AND_IDEAL_CONV =
             CONV_RULE(RAND_CONV(BINOP_CONV RING_NORMALIZE_CONV)) nth in
           let th2 = funpow deg (IDOM_RULE o CONJ th1) NOT_EQ_01 in
           vars,l,cert,th2 in
-      print "Translating certificate to HOL inferences";
-      print "\n";
+      Format.print_string("Translating certificate to HOL inferences");
+      Format.print_newline();
       let cert_pos = map
         (fun (i,p) -> i,filter (fun (c,m) -> c >/ num_0) p) cert
       and cert_neg = map

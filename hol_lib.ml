@@ -16,6 +16,16 @@ open Hol_loader;;
 *)
 
 (* ------------------------------------------------------------------------- *)
+(* Make it harder to accidentally use CakeML-specific code and add a         *)
+(* compatiblity layer.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+loads "candle_insulate.ml";;  (* Auto-generated. Moves CakeML specifics.     *)
+loads "candle_nums.ml";;      (* Load "num".                                 *)
+loads "candle_pretty.ml";;    (* Pretty printer code.                        *)
+loads "candle_ocaml.ml";;     (* OCaml modules.                              *)
+
+(* ------------------------------------------------------------------------- *)
 (* Bind these to names that are independent of OCaml versions before they    *)
 (* are potentially overwritten by an identifier of the same name. In older   *)
 (* and newer Ocaml versions these are respectively:                          *)
@@ -24,24 +34,22 @@ open Hol_loader;;
 (* Pervasives.abs_float -> Stdlib.abs_float / Float.abs                      *)
 (* ------------------------------------------------------------------------- *)
 
-let float_sqrt = Double.sqrt;;
-let float_fabs = Double.abs;;
+let float_sqrt = Float.sqrt;;
+let float_fabs = Float.abs;;
 
 (* ------------------------------------------------------------------------- *)
 (* Various tweaks to OCaml and general library functions.                    *)
 (* ------------------------------------------------------------------------- *)
 
-loads "system.ml";;      (* Set up proper parsing                            *)
-loads "candle_nums.ml";; (* Load "num"                                       *)
-loads "bignum_num.ml";;  (* Load bignums                                     *)
-loads "lib.ml";;         (* Various useful general library functions         *)
+loads "system.ml";;        (* Set up proper parsing                          *)
+loads "bignum_num.ml";;    (* Load bignums                                   *)
+loads "lib.ml";;           (* Various useful general library functions       *)
 
 (* ------------------------------------------------------------------------- *)
 (* Candle things.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
 loads "candle_kernel.ml";;               (* Brings Candle kernel into scope. *)
-loads "candle_pretty.ml";;               (* Pretty printer code.             *)
 
 (* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
@@ -74,9 +82,7 @@ loads "class.ml";;      (* Classical reasoning: Choice and Extensionality    *)
 loads "trivia.ml";;     (* Some very basic theories, e.g. type ":1"          *)
 loads "canon.ml";;      (* Tools for putting terms in canonical forms        *)
 loads "meson.ml";;      (* First order automation: MESON (model elimination) *)
-(*
 loads "firstorder.ml";; (* More utilities for first-order shadow terms       *)
-*)
 loads "metis.ml";;      (* More advanced first-order automation: Metis       *)
 (*
 loads "thecops.ml";;    (* Connection-based automation: leanCoP and nanoCoP  *)
@@ -119,5 +125,5 @@ let check_axioms () =
   let basic_axioms = [INFINITY_AX; SELECT_AX; ETA_AX] in
   let l = filter (fun th -> not (mem th basic_axioms)) (axioms()) in
   if l <> [] then
-    let msg = "[" ^ (String.concatWith ", " (map string_of_thm l)) ^ "]" in
+    let msg = "[" ^ (String.concat ", " (map string_of_thm l)) ^ "]" in
     failwith ("check_axioms: " ^ msg);;

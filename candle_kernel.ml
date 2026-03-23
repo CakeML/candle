@@ -90,14 +90,14 @@ module Type = struct
   let rec compare ty1 ty2 =
     match ty1, ty2 with
     | Tyvar x1, Tyvar x2 -> String.compare x1 x2
-    | Tyvar _, Tyapp _ -> Less
+    | Tyvar _, Tyapp _ -> -1
     | Tyapp (x1,a1), Tyapp (x2,a2) ->
         Pair.compare String.compare (List.compare compare) (x1,a1) (x2,a2)
-    | Tyapp _, Tyvar _ -> Greater
+    | Tyapp _, Tyvar _ -> 1
   ;;
-  let (<) ty1 ty2 = compare ty1 ty2 = Less
+  let (<) ty1 ty2 = compare ty1 ty2 < 0
   ;;
-  let (<=) ty1 ty2 = compare ty1 ty2 <> Greater
+  let (<=) ty1 ty2 = compare ty1 ty2 <> 1
   ;;
 end;;
 
@@ -106,23 +106,25 @@ module Term = struct
     match t1, t2 with
     | Var (x1,ty1), Var (x2,ty2) ->
         Pair.compare String.compare Type.compare (x1,ty1) (x2,ty2)
-    | Var _, _ -> Less
+    | Var _, _ -> -1
     | Const (x1,ty1), Const (x2,ty2) ->
         Pair.compare String.compare Type.compare (x1,ty1) (x2,ty2)
-    | Const _, Var _ -> Greater
-    | Const _, _ -> Less
+    | Const _, Var _ -> 1
+    | Const _, _ -> -1
     | Comb (s1,s2), Comb (t1,t2) ->
         Pair.compare compare compare (s1,s2) (t1,t2)
-    | Comb _, Var _ -> Greater
-    | Comb _, Const _ -> Greater
-    | Comb _, Abs _ -> Less
+    | Comb _, Var _ -> 1
+    | Comb _, Const _ -> 1
+    | Comb _, Abs _ -> -1
     | Abs (s1,s2), Abs (t1,t2) ->
         Pair.compare compare compare (s1,s2) (t1,t2)
-    | Abs _, _ -> Greater
+    | Abs _, _ -> 1
   ;;
-  let (<) t1 t2 = compare t1 t2 = Less
+  let (<) t1 t2 = compare t1 t2 < 0
   ;;
-  let (<=) t1 t2 = compare t1 t2 <> Greater
+  let (>) t1 t2 = compare t1 t2 > 0
+  ;;
+  let (<=) t1 t2 = compare t1 t2 <> 1
   ;;
 end;;
 
@@ -132,9 +134,9 @@ module Thm = struct
                  (dest_thm th1)
                  (dest_thm th2)
   ;;
-  let (<) th1 th2 = compare th1 th2 = Less
+  let (<) th1 th2 = compare th1 th2 < 0
   ;;
-  let (<=) th1 th2 = compare th1 th2 <> Greater
+  let (<=) th1 th2 = compare th1 th2 <> 1
   ;;
 end;;
 
@@ -142,34 +144,34 @@ let rec ordav env x1 x2 =
   match env with
   | [] -> Term.compare x1 x2
   | (t1,t2)::env ->
-      if Term.compare x1 t1 = Equal then
-        if Term.compare x2 t2 = Equal then
-          Equal
+      if Term.compare x1 t1 = 0 then
+        if Term.compare x2 t2 = 0 then
+          0
         else
-          Less
-      else if Term.compare x2 t2 = Equal then
-        Greater
+          -1
+      else if Term.compare x2 t2 = 0 then
+        1
       else
         ordav env x1 x2
 ;;
 
 let rec orda env t1 t2 =
-  if List.null env && t1 = t2 then Equal else
+  if Cake.List.null env && t1 = t2 then 0 else
     match t1, t2 with
     | Var (_,_), Var (_,_) -> ordav env t1 t2
     | Const (_,_), Const (_,_) -> Term.compare t1 t2
     | Comb (s1, t1), Comb (s2, t2) ->
         let c = orda env s1 s2 in
-        if c <> Equal then c else orda env t1 t2
+        if c <> 0 then c else orda env t1 t2
     | Abs (s1, t1), Abs (s2, t2) ->
         let c = Type.compare (type_of s1) (type_of s2) in
-        if c <> Equal then c else orda ((s1,s2)::env) t1 t2
-    | Var (_,_), _ -> Less
-    | _, Var (_,_) -> Greater
-    | Const (_,_), _ -> Less
-    | _, Const (_,_) -> Greater
-    | Comb (_,_), _ -> Less
-    | _, Comb (_,_) -> Greater
+        if c <> 0 then c else orda ((s1,s2)::env) t1 t2
+    | Var (_,_), _ -> -1
+    | _, Var (_,_) -> 1
+    | Const (_,_), _ -> -1
+    | _, Const (_,_) -> 1
+    | Comb (_,_), _ -> -1
+    | _, Comb (_,_) -> 1
 ;;
 
 let alphaorder = orda []
@@ -180,7 +182,7 @@ let alphaorder = orda []
  * Fixes to the Kernel interface
  * ------------------------------------------------------------------------- *)
 
-let aconv s t = alphaorder s t = Equal;;
+let aconv s t = alphaorder s t = 0;;
 
 let tyvars t = List.map mk_vartype (tyvars t);;
 let type_vars_in_term t = List.map mk_vartype (type_vars_in_term t);;
@@ -191,4 +193,3 @@ let type_vars_in_term t = List.map mk_vartype (type_vars_in_term t);;
 (* ------------------------------------------------------------------------- *)
 
 let equals_thm th th' = dest_thm th = dest_thm th';;
-

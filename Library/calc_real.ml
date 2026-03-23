@@ -1725,7 +1725,9 @@ let ELIMINATE_DEF =
 (* Overall conversion.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-let realcalc_cache = ref [];;
+type realcalc =
+  ((num * num) ref * (num -> num)) * ((num * thm) ref * (num -> thm))
+let realcalc_cache = ref ([] : (term * realcalc) list)
 
 let REALCALC_CONV,thm_eval,raw_eval,thm_wrap =
   let a_tm = `a:real` and n_tm = `n:num` and n'_tm = `n':num`
@@ -2095,7 +2097,7 @@ let REALCALC_CONV,thm_eval,raw_eval,thm_wrap =
       let ax0 = abs_num x0 in
       let r = log2(ax0) -/ num 1 in
       let get_ek(acc) =
-        if r < num 0 then
+        if r </ num 0 then
           let p = find_msd rfn in
           let e = acc +/ p +/ num 1 in
           let k = e +/ p in e,k
@@ -2170,7 +2172,7 @@ let REALCALC_CONV,thm_eval,raw_eval,thm_wrap =
         and q = log2(abs_num(raw_eval rfn2 s)) in
         let k = q +/ r +/ num 1
         and l = p +/ s +/ num 1 in
-        if p =/ num 0 && q = num 0 then
+        if p =/ num 0 && q =/ num 0 then
           if k </ l then k +/ num 1,l else k,l +/ num 1
         else k,l in
       let raw_fn acc =

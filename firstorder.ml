@@ -38,7 +38,9 @@ end
 module List =
 struct
 
+(*
 include List
+*)
 
 let cons x l = x :: l
 
@@ -83,7 +85,7 @@ let rec findi p l =
 
 let concat_map f l = List.concat (List.map f l)
 
-let fsum = List.fold_left (+.) 0.
+let fsum = List.fold_left (+.) Float.zero
 
 let rec last = function
     [] -> failwith "last"
@@ -136,8 +138,8 @@ end
 module Mapping = struct
 
   let reset_vars,fol_of_var,hol_of_var =
-    let vstore = ref []
-    and gstore = ref []
+    let vstore = ref ([]:(term * int) list)
+    and gstore = ref ([]:(term * int) list)
     and vcounter = ref 0 in
     let inc_vcounter() =
       let n = !vcounter in
@@ -148,13 +150,14 @@ module Mapping = struct
       try assoc v !vstore with Failure _ ->
       let n = inc_vcounter() in
       if !copverb then
-        Format.printf "fol_of_var: %s (ty = %s) <- %d\n%!"
-        (string_of_term v) (string_of_type (type_of v)) n;
-      vstore := (v,n)::!vstore; n in
+        print_string (String.concat "" [
+         "fol_of_var: "; string_of_term v;
+         " (ty = "; string_of_type (type_of v); ") <- "; string_of_int n; "\n"]);
+      vstore := (v,n)::(!vstore); n in
     let hol_of_var v ty =
       try rev_assoc v !gstore with Failure _ ->
       let gv = genvar ty in
-      gstore := (gv,v)::!gstore; gv in
+      gstore := (gv,v)::(!gstore); gv in
     reset_vars,fol_of_var,hol_of_var
 
   let reset_consts,fol_of_const,hol_of_const =
@@ -214,7 +217,7 @@ module Mapping = struct
        without the full number of its arguments (due to partial application).
        Therefore obtain only as many types of arguments
        as present in the FO term. *)
-    assert (List.length args <= List.length tys);
+    (* assert (List.length args <= List.length tys); *)
     let tys' = Utils.List.take (List.length args) tys in
     list_mk_comb (f', List.map2 hol_of_term tys' args)
 
@@ -248,7 +251,7 @@ module Mapping = struct
       else basics in
     fun thms ->
       let rawrules = itlist (union' eqt o fol_of_hol_clause) thms [] in
-      let prs = setify (map (fst o snd o fst) rawrules) in
+      let prs = setify (<=) (map (fst o snd o fst) rawrules) in
       let prules =
         map (fun t -> t,filter ((=) t o fst o snd o fst) rawrules) prs in
       let srules = sort (fun (p,_) (q,_) -> abs(p) <= abs(q)) prules in

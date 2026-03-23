@@ -83,11 +83,10 @@ let new_type_abbrev,remove_type_abbrev,type_abbrevs =
   let remove_type_abbrev s =
     the_type_abbreviations :=
       filter (fun (s',_) -> s' <> s) (!the_type_abbreviations) in
+  let (<) x y = Pair.compare String.compare Type.compare x y < 0 in
   let new_type_abbrev(s,ty) =
     (remove_type_abbrev s;
-     the_type_abbreviations :=
-       merge (fun x y -> Pair.compare String.compare Type.compare x y = Less)
-             [s,ty] (!the_type_abbreviations)) in
+     the_type_abbreviations := merge(<) [s,ty] (!the_type_abbreviations)) in
   let type_abbrevs() = !the_type_abbreviations in
   new_type_abbrev,remove_type_abbrev,type_abbrevs;;
 
@@ -157,7 +156,6 @@ let rec preterm_of_term tm =
 (* ------------------------------------------------------------------------- *)
 
 let type_of_pretype,term_of_preterm,retypecheck =
-
   let tyv_num = ref 0 in
   let new_type_var() = let n = !tyv_num in (tyv_num := n + 1; Stv(n)) in
 
@@ -213,7 +211,7 @@ let type_of_pretype,term_of_preterm,retypecheck =
   (* ----------------------------------------------------------------------- *)
 
   let get_var_type vname =
-    assoc vname (!the_implicit_types) in
+    assoc vname !the_implicit_types in
 
   (* ----------------------------------------------------------------------- *)
   (* Unravel unifications and apply them to a type.                          *)
@@ -231,12 +229,12 @@ let type_of_pretype,term_of_preterm,retypecheck =
   (* ----------------------------------------------------------------------- *)
 
   let free_stvs =
-    let rec free_stvs stv = match stv with
+    let rec free_stvs = function
     |Stv n -> [n]
     |Utv _ -> []
     |Ptycon(_,args) -> flat (map free_stvs args)
     in
-    setify Int.(<=) o free_stvs
+    setify (<=) o free_stvs
   in
 
   let string_of_pretype stvs =
@@ -249,7 +247,7 @@ let type_of_pretype,term_of_preterm,retypecheck =
   in
 
   let string_of_preterm =
-    let rec untyped_t_of_pt pt = match pt with
+    let rec untyped_t_of_pt = function
       |Varp(s,pty) -> mk_var(s,aty)
       |Constp(s,pty) -> mk_mconst(s,get_const_type s)
       |Combp(l,r) -> mk_comb(untyped_t_of_pt l,untyped_t_of_pt r)
@@ -305,7 +303,7 @@ let type_of_pretype,term_of_preterm,retypecheck =
     |(t,Stv x,ptm)::oth -> unify env ((Stv x,t,ptm)::oth)
     |(_,_,ptm)::oth -> failwith (string_of_ty_error env ptm)
     in
-    unify env [ty1,ty2,(match ptm with None -> None | Some t -> Some(t,ty1,ty2))]
+    unify env [ty1,ty2,match ptm with None -> None | Some t -> Some(t,ty1,ty2)]
   in
 
   (* ----------------------------------------------------------------------- *)
@@ -407,7 +405,7 @@ let type_of_pretype,term_of_preterm,retypecheck =
     | Utv(v) -> (mk_vartype(v), false)
     | Ptycon(con,args) ->
       let args',translated = unzip (map type_of_pretype_base args) in
-      let translated = List.foldl (fun x y -> if x then x else y) false translated in
+      let translated = List.fold_left (||) false translated in
       (mk_type(con,args'), translated) in
 
   let type_of_pretype (ty:pretype): hol_type =
@@ -426,7 +424,7 @@ let type_of_pretype,term_of_preterm,retypecheck =
           let v = mk_var(s,ty) in
           let _ =
             if translated && not (exists (fun s' -> s = s')
-                             (!stvs_translated_terms))
+                             !stvs_translated_terms)
             then stvs_translated_terms := s::(!stvs_translated_terms)
             else () in v
       | Constp(s,pty) ->
@@ -434,19 +432,19 @@ let type_of_pretype,term_of_preterm,retypecheck =
           let c = mk_mconst(s,ty) in
           let _ =
             if translated && not (exists (fun s' -> s = s')
-                             (!stvs_translated_terms))
+                             !stvs_translated_terms)
             then stvs_translated_terms := s::(!stvs_translated_terms)
             else () in c
       | Combp(l,r) -> mk_comb(term_of_preterm l,term_of_preterm r)
       | Absp(v,bod) -> mk_gabs(term_of_preterm v,term_of_preterm bod)
       | Typing(ptm,pty) -> term_of_preterm ptm in
     let report_type_invention () =
-      if (!stvs_translated_terms) <> [] then
-        if (!type_invention_error)
+      if !stvs_translated_terms <> [] then
+        if !type_invention_error
         then failwith
             ("typechecking error (cannot infer type of variables): " ^
-             String.concatWith ", " (!stvs_translated_terms))
-        else warn (!type_invention_warning) "inventing type variables" in
+             String.concat ", " !stvs_translated_terms)
+        else warn !type_invention_warning "inventing type variables" in
     fun ptm -> stvs_translated_terms := [];
                let tm = term_of_preterm ptm in
                report_type_invention (); tm in
@@ -465,7 +463,6 @@ let type_of_pretype,term_of_preterm,retypecheck =
       try resolve_interface ptm' (fun e -> e) env
       with Failure _ -> failwith "typechecking error (overload resolution)" in
     let ptm'' = solve_preterm env' ptm' in
-    ptm''
-  in
+    ptm'' in
 
   type_of_pretype,term_of_preterm,retypecheck;;

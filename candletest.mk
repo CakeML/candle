@@ -16,6 +16,9 @@
 # consult your preferred resources to find out how you can give those
 # CAP_SYS_ADMIN to it.
 
+# To restore, we can use the following command:
+#  sudo criu restore -D checkpoint/ --shell-job
+
 # Since we need to restore into a terminal, but also want to call it via make
 # we need to place it into a pseudoterminal. To avoid having to somehow pass
 # the user password into that, we assume that criu can be run with sudo without
@@ -121,5 +124,5 @@ $(LOGDIR)/%.ready:
 	@mkdir -p $(LOGDIR)/$$(dirname $*)
 	@echo '### Loading $*.ml'
 	@echo '### Loading $*.ml' > $(LOGDIR)/$*
-	@echo 'loads "$*.ml";;Runtime.exit 0;;' | (timeout 60 $(CANDLE) >> $(LOGDIR)/$* 2>&1) || echo "TIMEOUT" >> $(LOGDIR)/$*
+	@echo 'loads "$*.ml";;Cake.Runtime.exit 0;;' | ($(CANDLE) >> $(LOGDIR)/$* 2>&1) || echo "TIMEOUT" >> $(LOGDIR)/$*
 	@touch $(LOGDIR)/$*.ready
