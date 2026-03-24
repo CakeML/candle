@@ -13,8 +13,9 @@ patch cake-x64-64/cake.S cake.S.patch
 # Build the compiler binary
 cd cake-x64-64 && make && cd ..
 
-# Copy the compiler binary and the exported compiler state into this directory:
-cp cake-x64-64/cake cake-x64-64/config_enc_str.txt .
+# Copy the compiler binary, the exported compiler state and candle_boot.ml into
+# this directory:
+cp cake-x64-64/cake cake-x64-64/config_enc_str.txt cake-x64-64/candle_boot.ml .
 
 # Create the types.txt file necessary for candle_insulate.py
 ./cake --types < /dev/null
