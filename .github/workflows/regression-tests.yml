@@ -11,4 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      - name: Install CRIU
+        run: |
+          sudo add-apt-repository -y ppa:criu/ppa
+          sudo apt-get update
+          sudo apt-get install -y criu
+
+      - name: Verify CRIU installation
+        run: sudo criu check
+
       - run: ./test.sh
