@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Get the 64-bit CakeML compiler from here:
-#curl -OL https://cakeml.org/regression/artefacts/3149/cake-x64-64.tar.gz
+curl -OL https://cakeml.org/regression/artefacts/3276/cake-x64-64.tar.gz
 tar xvzf cake-x64-64.tar.gz
 
 # By default, the CakeML compiler reserves a few kilobytes for constants and
@@ -18,7 +18,7 @@ cd cake-x64-64 && make && cd ..
 cp cake-x64-64/cake cake-x64-64/config_enc_str.txt cake-x64-64/candle_boot.ml .
 
 # Create the types.txt file necessary for candle_insulate.py
-./cake --types < /dev/null
+./cake --types < /dev/null > types.txt 2>&1
 
 # Generate candle_insulate.ml
 python candle_insulate.py types.txt candle_insulate.ml
