@@ -62,6 +62,7 @@ end;;
 module Int = struct
   let compare x y =
     if x < y then -1 else if x > y then 1 else 0
+  let max x y = if x > y then x else y
   let to_string x = Cake.Int.toString x
 end;;
 
@@ -266,8 +267,18 @@ end;;
 module Sys = struct
   let remove (s: string) = print "TODO Sys.remove (noop)\n"
   let command (s: string) =
-    print_endline "TODO Sys.command (noop, always returns 1)";
-    1
+    let slen = String.length s in
+    (* slen + 1: null-terminated string; 2: status bytes *)
+    let blen = Int.max 2 (slen + 1) in
+    let bytes = Cake.Word8_array.array blen (Cake.Word8.fromInt 0) in
+    let _ = Cake.Word8_array.copyVec s 0 slen bytes 0 in
+    let _ = Cake.Runtime.customFFI "system" bytes in
+    let ret = Cake.Word8.toInt (Cake.Word8_array.sub bytes 0) in
+    let _ =
+      if 0 < ret
+      then raise (Sys_error "Sys.command: no termination status for child")
+      else () in
+    Cake.Word8.toInt (Cake.Word8_array.sub bytes 1);;
   let time () =
     print_endline "TODO Sys.time (always returns 0)";
     Float.zero;;
