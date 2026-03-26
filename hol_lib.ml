@@ -20,10 +20,10 @@ open Hol_loader;;
 (* compatiblity layer.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
-loads "candle_insulate.ml";;  (* Auto-generated. Moves CakeML specifics.     *)
-loads "candle_nums.ml";;      (* Load "num".                                 *)
-loads "candle_pretty.ml";;    (* Pretty printer code.                        *)
-loads "candle_ocaml.ml";;     (* OCaml modules.                              *)
+loads "candle/build/insulate.ml";;  (* Moves CakeML specifics.               *)
+loads "candle/nums.ml";;            (* Load "num".                           *)
+loads "candle/pretty.ml";;          (* Pretty printer code.                  *)
+loads "candle/ocaml.ml";;           (* OCaml modules.                        *)
 
 (* ------------------------------------------------------------------------- *)
 (* Bind these to names that are independent of OCaml versions before they    *)
@@ -49,7 +49,7 @@ loads "lib.ml";;           (* Various useful general library functions       *)
 (* Candle things.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-loads "candle_kernel.ml";;               (* Brings Candle kernel into scope. *)
+loads "candle/kernel.ml";;               (* Brings Candle kernel into scope. *)
 
 (* ------------------------------------------------------------------------- *)
 (* Some extra support stuff needed outside the core.                         *)
@@ -116,6 +116,11 @@ loads "iterate.ml";;    (* Iterated operations                               *)
 loads "cart.ml";;       (* Finite Cartesian products                         *)
 loads "define.ml";;     (* Support for general recursive definitions         *)
 
+(* ------------------------------------------------------------------------- *)
+(* In-logic computation function.                                            *)
+(* ------------------------------------------------------------------------- *)
+
+loads "candle/compute.ml";; (* Definitions of cval primitives                *)
 
 (* ------------------------------------------------------------------------- *)
 (* Checks that no axiom other than those allowed by core libs are introduced *)

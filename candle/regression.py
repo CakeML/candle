@@ -1,3 +1,21 @@
+"""
+Simple Python script to test Candle.
+
+Note that this script assumes passwordless sudo for criu, which can be
+achieved by:
+1. Calling visudo
+2. Adding
+   user ALL = (root) NOPASSWD: /usr/bin/criu
+   to it, taking care to replace user with the proper username.
+
+No claims are made on whether this a good idea in regards to security.
+
+The reason criu is used, is because DMTCP segfaulted on my machine.
+However, I suspect that that might have been due to the packaged
+version being outdated, so it is worth reconsidering, as it appears
+that DMTCP supports one checkpoint to be restored multiple times
+simulatenously, which would make parallelism during testing easier.
+"""
 import sys
 import pexpect
 import time
@@ -6,6 +24,10 @@ import os
 import argparse
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
+
+# <root>/candle/candle-regression.py
+CANDLE_ROOT = Path(__file__).resolve().parent.parent
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -61,9 +83,9 @@ TESTS = [
 # ---------------------------------------------------------------------------
 
 class CandleREPL:
-    def __init__(self, base, restore=False):
+    def __init__(self, restore=False):
         # Easier to assume that we are in the candle directory for now.
-        os.chdir(base)
+        os.chdir(CANDLE_ROOT)
 
         # Indicates whether we are a restored instance. In that case, I suspect
         # that the pid of self.process might be of sudo criu restore instead of
@@ -71,8 +93,7 @@ class CandleREPL:
         self._cake_pid = None
 
         self._logfile = sys.stdout
-        self._base = base
-        self._checkpoint_dir = "checkpoint"
+        self._checkpoint_dir = str(CANDLE_ROOT / "checkpoint")
         self._pidfile_name = "cake.pid"
 
         self.load_stack = []
@@ -82,7 +103,11 @@ class CandleREPL:
             self.restore()
         else:
             try:
-                self.process = pexpect.spawn("./candle", encoding='utf-8', logfile=self._logfile)
+                self.process = pexpect.spawn(
+                    str(CANDLE_ROOT / "candle.sh"),
+                    encoding='utf-8',
+                    logfile=self._logfile
+                )
             except Exception as e:
                 raise StartFailure from e
             try:
@@ -262,20 +287,19 @@ class Reporter:
 # ---------------------------------------------------------------------------
 
 class TestRunner:
-    def __init__(self, base_dir, timeout=600, fail_fast=False):
-        self.base_dir = base_dir
+    def __init__(self, timeout=600, fail_fast=False):
         self.timeout = timeout
         self.fail_fast = fail_fast
 
     def setup(self, reuse_checkpoint=False):
         """Start candle, load hol.ml, and dump a checkpoint."""
-        checkpoint_path = os.path.join(self.base_dir, "checkpoint")
+        checkpoint_path = CANDLE_ROOT / "checkpoint"
         if reuse_checkpoint and os.path.isdir(checkpoint_path):
             print("Reusing existing checkpoint.")
             return
 
         print("Starting candle and loading hol.ml...")
-        repl = CandleREPL(self.base_dir)
+        repl = CandleREPL()
         try:
             repl.load("hol.ml", timeout=3600)
             print("hol.ml loaded. Dumping checkpoint...")
@@ -290,7 +314,7 @@ class TestRunner:
         start = time.perf_counter()
 
         try:
-            repl = CandleREPL(self.base_dir, restore=True)
+            repl = CandleREPL(restore=True)
         except Exception as e:
             elapsed = time.perf_counter() - start
             return TestResult(
@@ -401,10 +425,6 @@ def main():
         "--timeout", type=int, default=600,
         help="Per-test timeout in seconds (default: 600)",
     )
-    parser.add_argument(
-        "--base-dir", default=os.path.dirname(os.path.abspath(__file__)),
-        help="Candle base directory (default: script directory)",
-    )
 
     args = parser.parse_args()
 
@@ -422,7 +442,6 @@ def main():
         tests = list(TESTS)
 
     runner = TestRunner(
-        base_dir=args.base_dir,
         timeout=args.timeout,
         fail_fast=args.fail_fast,
     )

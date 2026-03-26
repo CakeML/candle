@@ -8,7 +8,7 @@
 (*     (c) Copyright, Andrea Gabrielli, Marco Maggesi 2017-2018              *)
 (* ========================================================================= *)
 
-needs "candle_kernel.ml";;
+needs "candle/kernel.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Create probably-fresh variable                                            *)
