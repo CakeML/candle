@@ -5,4 +5,4 @@ set -euo pipefail
 ./build-instructions.sh
 
 # Run regression suite
-python candle-regression.py
+python candle/regression.py

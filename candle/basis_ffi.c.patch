@@ -1,0 +1,20 @@
+--- basis_ffi.c
++++ basis_ffi.c
+@@ -294,6 +294,13 @@
+ }
+
+ void fficustom (unsigned char *c, long clen, unsigned char *a, long alen) {
+-  assert(0 <= alen);
+-  assert(0 <= clen);
++  if (strcmp(c, "chdir") == 0) {
++    assert(1 <= alen);
++    a[0] = chdir(a) != 0;
++  } else if (strcmp(c, "getcwd") == 0) {
++    assert(1 <= alen);
++    a[0] = getcwd(a + 1, alen - 1) == NULL;
++  } else {
++    return;
++  }
+ }
+
+ // ---------------------------------------------------------------------------

@@ -1,5 +1,4 @@
 exception Invalid_argument of string;;
-exception Sys_error of string;;
 exception End_of_file;;
 exception Not_found;;
 

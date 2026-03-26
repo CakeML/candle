@@ -1,32 +1,44 @@
 #!/bin/bash
+# Set up "strict mode" for bash
 set -euo pipefail
 
+# Create (if needed) + Change into the build directory
+mkdir -p candle/build
+cd candle/build
+
 # Get the 64-bit CakeML compiler from here:
-curl -OL https://cakeml.org/regression/artefacts/3276/cake-x64-64.tar.gz
-tar xvzf cake-x64-64.tar.gz
+curl -OL https://cakeml.org/regression/artefacts/3286/cake-x64-64.tar.gz
+tar xvzf cake-x64-64.tar.gz --strip-components=1
 
 # By default, the CakeML compiler reserves a few kilobytes for constants and
 # code produced by the dynamic compiler. Using Candle requires setting these
 # to some megabytes:
-patch cake-x64-64/cake.S cake.S.patch
+patch cake.S ../cake.S.patch
+
+# Patching in useful FFI calls
+patch basis_ffi.c ../basis_ffi.c.patch
 
 # Build the compiler binary
-cd cake-x64-64 && make && cd ..
-
-# Copy the compiler binary, the exported compiler state and candle_boot.ml into
-# this directory:
-cp cake-x64-64/cake cake-x64-64/config_enc_str.txt cake-x64-64/candle_boot.ml .
+make
 
 # Create the types.txt file necessary for candle_insulate.py
 ./cake --types < /dev/null > types.txt 2>&1
 
 # Generate candle_insulate.ml
-python candle_insulate.py types.txt candle_insulate.ml
+python ../insulate.py types.txt insulate.ml
+
+#  The working directory of the binary will be CANDLE_ROOT/candle/build,
+#  so it needs to change directory to CANDLE_ROOT after booting..
+#
+#  Q: Why do we not start the cake binary from CANDLE_ROOT?
+#  A: The cake binary looks for config_enc_str.txt and candle_boot.ml relative
+#     to the current working directoy. I find it neater if these files are not
+#     copied to CANDLE_ROOT, but stay tucked away in the build folder.
+#
+cat ../chdir_to_root.ml >> candle_boot.ml
 
 # You can now run Candle by writing:
-#   $ ./cake --candle
-# or:
-#   $ ./candle
+#   $ ./candle.sh
 # (without the $) at your prompt. Load the HOL Light sources by writing:
 #   > #use "hol.ml";;
 # (without > and with double semicolons) in the REPL.
