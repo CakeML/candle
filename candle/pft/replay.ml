@@ -37,3 +37,47 @@ let process_footer trace_path =
     (match e with
      | Failure s -> failwith ("process_footer: " ^ s)
      | _ -> raise e);;
+
+let (n_ty, n_tm, n_th, n_ci) = process_footer trace_path;;
+
+(* Initial values for the arrays *)
+let xvar = mk_var ("x", aty);;
+let xrefl = REFL xvar;;
+
+let tys = Array.make n_ty aty;;
+let tms = Array.make n_tm xvar;;
+let ths = Array.make n_th xrefl;;
+let cis = Array.make n_ci (Array.make 0 xrefl);;
+
+let command_stream = Text_io.openIn trace_path;;
+
+let expect_char fd char =
+  match Text_io.input1 fd with
+  | None -> failwith "expect_char: EOF"
+  | Some char' ->
+     if char = char' then ()
+     else failwith ("expect_char: unexpected " ^ String.make 1 char);;
+
+let expect_pft fd =
+  expect_char fd 'P'; expect_char fd 'F'; expect_char fd 'T';
+  expect_char fd '\000';;
+
+let _ = expect_pft command_stream;;
+
+let expect_version fd v =
+  if (decode_uleb128 fd) = v then ()
+  else failwith ("expect_version: unsupported version " ^ string_of_int v);;
+
+let _ = expect_version command_stream 1;;
+
+(* NEXT: decode_string:
+   A varint length followed by that many bytes of UTF-8 text. *)
+
+let next_command fd =
+  match Text_io.input1 fd with
+  | None -> failwith "next_command: EOF"
+  | Some char -> Cake.Word8.fromChar char;;
+
+let command = next_command command_stream;;
+
+let _ = Text_io.closeIn command_stream;;
