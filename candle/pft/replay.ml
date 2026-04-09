@@ -118,6 +118,15 @@ let pft_const () =
               ["CONST"; string_of_int id; name; string_of_int type_id]);
   Array.set tms id (mk_mconst (name, ty));;
 
+let pft_var () =
+  let id = decode_uleb128 command_stream in
+  let name = decode_string command_stream in
+  let type_id = decode_uleb128 command_stream in
+  let tm = Array.get tys type_id in
+  dprintln (String.concat " "
+              ["VAR"; string_of_int id; name; string_of_int type_id]);
+  Array.set tms id (mk_var (name, ty));;
+
 
 let rec command_loop () =
   match next_command command_stream with
@@ -127,6 +136,7 @@ let rec command_loop () =
      dprint (cmd_str ^ ": ");
      if cmd = Char.chr 1 then pft_tyvar ()
      else if cmd = Char.chr 2 then pft_tyop ()
+     else if cmd = Char.chr 3 then pft_var ()
      else if cmd = Char.chr 4 then pft_const ()
      else failwith ("command_loop: unsupported command: " ^ cmd_str);
      command_loop ();;
