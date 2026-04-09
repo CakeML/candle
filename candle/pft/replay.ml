@@ -99,54 +99,55 @@ let pft_tyop () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let n_args = decode_uleb128 command_stream in
-  let rec loop i ids acc =
-    if i <= 0 then (rev ids, rev acc) else
+  dprint (String.concat " "
+              ["TYOP"; string_of_int id; name; string_of_int n_args]);
+  let rec loop i args =
+    if i <= 0 then rev args else
       let id = decode_uleb128 command_stream in
-      loop (i - 1) (id::ids) (Array.get tys id::acc) in
-  let ids, args = loop n_args [] [] in
-  dprintln (String.concat " "
-            (["TYOP"; string_of_int id; name; string_of_int n_args]
-             @ (map string_of_int ids)));
+      dprint (string_of_int id ^ (if i = 1 then "" else " "));
+      loop (i - 1) (Array.get tys id::args) in
+  let args = loop n_args [] in
+  dprint "\n";
   Array.set tys id (mk_type (name, args));;
 
 let pft_const () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let type_id = decode_uleb128 command_stream in
-  let ty = Array.get tys type_id in
   dprintln (String.concat " "
               ["CONST"; string_of_int id; name; string_of_int type_id]);
+  let ty = Array.get tys type_id in
   Array.set tms id (mk_mconst (name, ty));;
 
 let pft_var () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let type_id = decode_uleb128 command_stream in
-  let ty = Array.get tys type_id in
   dprintln (String.concat " "
               ["VAR"; string_of_int id; name; string_of_int type_id]);
+  let ty = Array.get tys type_id in
   Array.set tms id (mk_var (name, ty));;
 
 let pft_abs () =
   let id = decode_uleb128 command_stream in
   let var_id = decode_uleb128 command_stream in
   let body_id = decode_uleb128 command_stream in
-  let var_tm = Array.get tms var_id in
-  let body_tm = Array.get tms body_id in
   dprintln (String.concat " "
               ["ABS"; string_of_int id; string_of_int var_id;
                string_of_int body_id]);
+  let var_tm = Array.get tms var_id in
+  let body_tm = Array.get tms body_id in
   Array.set tms id (mk_abs (var_tm, body_tm));;
 
 let pft_comb () =
   let id = decode_uleb128 command_stream in
   let rator_id = decode_uleb128 command_stream in
   let rand_id = decode_uleb128 command_stream in
-  let rator_tm = Array.get tms rator_id in
-  let rand_tm = Array.get tms rand_id in
   dprintln (String.concat " "
               ["COMB"; string_of_int id; string_of_int rator_id;
                string_of_int rand_id]);
+  let rator_tm = Array.get tms rator_id in
+  let rand_tm = Array.get tms rand_id in
   Array.set tms id (mk_comb (rator_tm, rand_tm));;
 
 let pft_assume () =
