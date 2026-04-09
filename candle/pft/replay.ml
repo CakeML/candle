@@ -122,11 +122,54 @@ let pft_var () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let type_id = decode_uleb128 command_stream in
-  let tm = Array.get tys type_id in
+  let ty = Array.get tys type_id in
   dprintln (String.concat " "
               ["VAR"; string_of_int id; name; string_of_int type_id]);
   Array.set tms id (mk_var (name, ty));;
 
+let pft_abs () =
+  let id = decode_uleb128 command_stream in
+  let var_id = decode_uleb128 command_stream in
+  let body_id = decode_uleb128 command_stream in
+  let var_tm = Array.get tms var_id in
+  let body_tm = Array.get tms body_id in
+  dprintln (String.concat " "
+              ["ABS"; string_of_int id; string_of_int var_id;
+               string_of_int body_id]);
+  Array.set tms id (mk_abs (var_tm, body_tm));;
+
+let pft_comb () =
+  let id = decode_uleb128 command_stream in
+  let rator_id = decode_uleb128 command_stream in
+  let rand_id = decode_uleb128 command_stream in
+  let rator_tm = Array.get tms rator_id in
+  let rand_tm = Array.get tms rand_id in
+  dprintln (String.concat " "
+              ["COMB"; string_of_int id; string_of_int rator_id;
+               string_of_int rand_id]);
+  Array.set tms id (mk_comb (rator_tm, rand_tm));;
+
+let pft_assume () =
+  let id = decode_uleb128 command_stream in
+  let tm_id = decode_uleb128 command_stream in
+  dprintln (String.concat " " ["ASSUME"; string_of_int id; string_of_int tm_id]);
+  let tm = Array.get tms tm_id in
+  Array.set ths id (ASSUME tm)
+
+let pft_new_specification () =
+  let id = decode_uleb128 command_stream in
+  let th_id = decode_uleb128 command_stream in
+  let n_names = decode_uleb128 command_stream in
+  let rec loop i names =
+    if i <= 0 then rev names else
+      let name = decode_string command_stream in
+      loop (i - 1) (name::names) in
+  let names = loop n_names [] in
+  dprintln (String.concat " "
+              (["new_specification"; string_of_int id; string_of_int th_id;
+                string_of_int n_names] @ names));
+  let th = Array.get ths th_id in
+  Array.set ths id (new_specification names th);;
 
 let rec command_loop () =
   match next_command command_stream with
@@ -134,11 +177,14 @@ let rec command_loop () =
   | Some cmd ->
      let cmd_str = string_of_int (Char.code cmd) in
      dprint (cmd_str ^ ": ");
-     if cmd = Char.chr 1 then pft_tyvar ()
-     else if cmd = Char.chr 2 then pft_tyop ()
-     else if cmd = Char.chr 3 then pft_var ()
-     else if cmd = Char.chr 4 then pft_const ()
-     else if cmd = Char.chr 6 then pft_abs ()
+     if cmd = Char.chr 0x01 then pft_tyvar ()
+     else if cmd = Char.chr 0x02 then pft_tyop ()
+     else if cmd = Char.chr 0x03 then pft_var ()
+     else if cmd = Char.chr 0x04 then pft_const ()
+     else if cmd = Char.chr 0x05 then pft_comb ()
+     else if cmd = Char.chr 0x06 then pft_abs ()
+     else if cmd = Char.chr 0x15 then pft_assume ()
+     else if cmd = Char.chr 0x30 then pft_new_specification ()
      else failwith ("command_loop: unsupported command: " ^ cmd_str);
      command_loop ();;
 
