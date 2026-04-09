@@ -93,7 +93,7 @@ let pft_tyvar () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   dprintln (String.concat " " ["TYVAR"; string_of_int id; name]);
-  Array.set tys id (mk_vartype name);;
+  Array.set tys id (Kernel.mk_vartype name);;
 
 let pft_tyop () =
   let id = decode_uleb128 command_stream in
@@ -108,7 +108,7 @@ let pft_tyop () =
       loop (i - 1) (Array.get tys id::args) in
   let args = loop n_args [] in
   dprint "\n";
-  Array.set tys id (mk_type (name, args));;
+  Array.set tys id (Kernel.mk_type (name, args));;
 
 let pft_const () =
   let id = decode_uleb128 command_stream in
@@ -126,7 +126,7 @@ let pft_var () =
   dprintln (String.concat " "
               ["VAR"; string_of_int id; name; string_of_int type_id]);
   let ty = Array.get tys type_id in
-  Array.set tms id (mk_var (name, ty));;
+  Array.set tms id (Kernel.mk_var (name, ty));;
 
 let pft_abs () =
   let id = decode_uleb128 command_stream in
@@ -137,7 +137,7 @@ let pft_abs () =
                string_of_int body_id]);
   let var_tm = Array.get tms var_id in
   let body_tm = Array.get tms body_id in
-  Array.set tms id (mk_abs (var_tm, body_tm));;
+  Array.set tms id (Kernel.mk_abs (var_tm, body_tm));;
 
 let pft_comb () =
   let id = decode_uleb128 command_stream in
@@ -155,7 +155,7 @@ let pft_assume () =
   let tm_id = decode_uleb128 command_stream in
   dprintln (String.concat " " ["ASSUME"; string_of_int id; string_of_int tm_id]);
   let tm = Array.get tms tm_id in
-  Array.set ths id (ASSUME tm)
+  Array.set ths id (Kernel.ASSUME tm)
 
 let pft_new_specification () =
   let id = decode_uleb128 command_stream in
@@ -170,7 +170,7 @@ let pft_new_specification () =
               (["new_specification"; string_of_int id; string_of_int th_id;
                 string_of_int n_names] @ names));
   let th = Array.get ths th_id in
-  Array.set ths id (new_specification names th);;
+  Array.set ths id (Kernel.new_specification th);;
 
 let rec command_loop () =
   match next_command command_stream with
