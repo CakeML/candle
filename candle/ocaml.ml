@@ -264,21 +264,39 @@ module Hashtbl = struct
     Cake.List.foldl (fun (x,y) acc -> f x y acc) init (Cake.Hashtable.toAscList tbl)
 end;;
 
+module Bytes = struct
+  let length s = Cake.Word8_array.length s
+  (* NOTE OCaml also raises Invalid_argument if  n > Sys.max_string_length;
+       additionally, OCaml returns an uninitialized sequence with
+       arbitrary bytes. *)
+  let create n =
+    if n < 0 then invalid_arg "Bytes.create: negative argument" else
+      Cake.Word8_array.array n (Cake.Word8.fromInt 0)
+  (* NOTE OCaml can raise Invalid_argument in get, set, blit_string.
+       Unsure how the CakeML handle out-of-bounds accesses. *)
+  let get s n = Cake.Word8_array.sub s n
+  let set s n c = Cake.Word8_array.update s n c
+  let blit_string src src_pos dst dst_pos len =
+    Cake.Word8_array.copyVec src src_pos len dst dst_pos
+  let to_string s = Cake.Word8_array.substring s 0 (length s)
+end;;
+
 module Sys = struct
   let remove (s: string) = print "TODO Sys.remove (noop)\n"
   let command (s: string) =
     let slen = String.length s in
     (* slen + 1: null-terminated string; 2: status bytes *)
     let blen = Int.max 2 (slen + 1) in
-    let bytes = Cake.Word8_array.array blen (Cake.Word8.fromInt 0) in
-    let _ = Cake.Word8_array.copyVec s 0 slen bytes 0 in
+    let bytes = Bytes.create blen in
+    (* Avoid recomputing length by using blit_string instead of of_string *)
+    let _ = Bytes.blit_string s 0 bytes 0 slen in
     let _ = Cake.Runtime.customFFI "system" bytes in
-    let ret = Cake.Word8.toInt (Cake.Word8_array.sub bytes 0) in
+    let ret = Cake.Word8.toInt (Bytes.get bytes 0) in
     let _ =
       if 0 < ret
       then raise (Sys_error "Sys.command: no termination status for child")
       else () in
-    Cake.Word8.toInt (Cake.Word8_array.sub bytes 1);;
+    Cake.Word8.toInt (Bytes.get bytes 1);;
   let time () =
     print_endline "TODO Sys.time (always returns 0)";
     Float.zero;;
