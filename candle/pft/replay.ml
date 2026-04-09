@@ -1,8 +1,13 @@
 let here = "candle/pft/";;
 let extract_footer_path = here ^ "extract_footer";;
 
+let debug = ref true;;
+let dprintln s = if !debug then Format.print_string s; Format.print_newline();;
+let dprint s = if !debug then Format.print_string s;;
+
 let trace_path = here ^ "candle-preamble.pft.bin";;
-let verbose = true;;
+
+let command_stream = Text_io.openIn trace_path;;
 
 let decode_uleb128 : Text_io.instream -> int =
   let zero     = Cake.Word8.fromInt   0 in
@@ -70,40 +75,6 @@ let decode_string fd =
 
 let next_command fd = Text_io.input1 fd;;
 
-
-let pft_tyvar () =
-  let id = decode_uleb128 command_stream in
-  let name = decode_string command_stream in
-  if verbose then
-    print ((String.concat " " ["TYVAR"; string_of_int id; name]) ^ "\n");
-  Array.set tys id (mk_vartype name);;
-
-let pft_tyop () =
-  let id = decode_uleb128 command_stream in
-  let name = decode_string command_stream in
-  let n_args = decode_uleb128 command_stream in
-  let rec loop i ids acc =
-    if i <= 0 then (rev ids, rev acc) else
-      let id = decode_uleb128 command_stream in
-      loop (i - 1) (id::ids) (Array.get tys id::acc) in
-  let ids, args = loop n_args [] [] in
-  if verbose then
-    print ((String.concat " "
-      (["TYOP"; string_of_int id; name; string_of_int n_args]
-       @ (map string_of_int ids))) ^ "\n");
-  Array.set tys id (mk_type (name, args));;
-
-
-let rec command_loop () =
-  match next_command command_stream with
-  | None -> ()
-  | Some cmd ->
-     if cmd = Char.chr 1 then pft_tyvar ()
-     else if cmd = Char.chr 2 then pft_tyop ()
-     else failwith ("command_loop: unsupported command: "
-                    ^ (string_of_int (Char.code cmd)));
-     command_loop ();;
-
 (* --- candle-preamble --- *)
 
 let (n_ty, n_tm, n_th, n_ci) = process_footer trace_path;;
@@ -117,7 +88,48 @@ let tms = Array.make n_tm xvar;;
 let ths = Array.make n_th xrefl;;
 let cis = Array.make n_ci (Array.make 0 xrefl);;
 
-let command_stream = Text_io.openIn trace_path;;
+
+let pft_tyvar () =
+  let id = decode_uleb128 command_stream in
+  let name = decode_string command_stream in
+  dprintln (String.concat " " ["TYVAR"; string_of_int id; name]);
+  Array.set tys id (mk_vartype name);;
+
+let pft_tyop () =
+  let id = decode_uleb128 command_stream in
+  let name = decode_string command_stream in
+  let n_args = decode_uleb128 command_stream in
+  let rec loop i ids acc =
+    if i <= 0 then (rev ids, rev acc) else
+      let id = decode_uleb128 command_stream in
+      loop (i - 1) (id::ids) (Array.get tys id::acc) in
+  let ids, args = loop n_args [] [] in
+  dprintln (String.concat " "
+            (["TYOP"; string_of_int id; name; string_of_int n_args]
+             @ (map string_of_int ids)));
+  Array.set tys id (mk_type (name, args));;
+
+let pft_const () =
+  let id = decode_uleb128 command_stream in
+  let name = decode_string command_stream in
+  let type_id = decode_uleb128 command_stream in
+  let ty = Array.get tys type_id in
+  dprintln (String.concat " "
+              ["CONST"; string_of_int id; name; string_of_int type_id]);
+  Array.set tms id (mk_mconst (name, ty));;
+
+
+let rec command_loop () =
+  match next_command command_stream with
+  | None -> ()
+  | Some cmd ->
+     let cmd_str = string_of_int (Char.code cmd) in
+     dprint (cmd_str ^ ": ");
+     if cmd = Char.chr 1 then pft_tyvar ()
+     else if cmd = Char.chr 2 then pft_tyop ()
+     else if cmd = Char.chr 4 then pft_const ()
+     else failwith ("command_loop: unsupported command: " ^ cmd_str);
+     command_loop ();;
 
 let _ = expect_pft command_stream;;
 let _ = expect_version command_stream 1;;
@@ -127,12 +139,5 @@ let _ =
   if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset);;
 
 let _ = command_loop ();;
-
-let id = decode_uleb128 command_stream;;
-let name = decode_string command_stream;;
-let type_id = decode_uleb128 command_stream;;
-let ty = Array.get tys type_id;;
-Array.set tms id (mk_mconst (name, ty));;
-
 
 let _ = Text_io.closeIn command_stream;;
