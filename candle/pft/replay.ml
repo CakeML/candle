@@ -138,6 +138,7 @@ let rec command_loop () =
      else if cmd = Char.chr 2 then pft_tyop ()
      else if cmd = Char.chr 3 then pft_var ()
      else if cmd = Char.chr 4 then pft_const ()
+     else if cmd = Char.chr 6 then pft_abs ()
      else failwith ("command_loop: unsupported command: " ^ cmd_str);
      command_loop ();;
 
