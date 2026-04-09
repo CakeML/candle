@@ -2,7 +2,7 @@ let here = "candle/pft/";;
 let extract_footer_path = here ^ "extract_footer";;
 
 let trace_path = here ^ "candle-preamble.pft.bin";;
-
+let verbose = true;;
 
 let decode_uleb128 : Text_io.instream -> int =
   let zero     = Cake.Word8.fromInt   0 in
@@ -74,18 +74,25 @@ let next_command fd = Text_io.input1 fd;;
 let pft_tyvar () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
+  if verbose then
+    print ((String.concat " " ["TYVAR"; string_of_int id; name]) ^ "\n");
   Array.set tys id (mk_vartype name);;
 
 let pft_tyop () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let n_args = decode_uleb128 command_stream in
-  let rec loop i acc =
-    if i <= 0 then rev acc else
-      let idx = decode_uleb128 command_stream in
-      loop (i - 1) (Array.get tys idx::acc) in
-  let args = loop n_args [] in
+  let rec loop i ids acc =
+    if i <= 0 then (rev ids, rev acc) else
+      let id = decode_uleb128 command_stream in
+      loop (i - 1) (id::ids) (Array.get tys id::acc) in
+  let ids, args = loop n_args [] [] in
+  if verbose then
+    print ((String.concat " "
+      (["TYOP"; string_of_int id; name; string_of_int n_args]
+       @ (map string_of_int ids))) ^ "\n");
   Array.set tys id (mk_type (name, args));;
+
 
 let rec command_loop () =
   match next_command command_stream with
@@ -93,7 +100,8 @@ let rec command_loop () =
   | Some cmd ->
      if cmd = Char.chr 1 then pft_tyvar ()
      else if cmd = Char.chr 2 then pft_tyop ()
-     else failwith ("command_loop: unsupported command: " ^ String.make 1 cmd);
+     else failwith ("command_loop: unsupported command: "
+                    ^ (string_of_int (Char.code cmd)));
      command_loop ();;
 
 (* --- candle-preamble --- *)
@@ -119,5 +127,12 @@ let _ =
   if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset);;
 
 let _ = command_loop ();;
+
+let id = decode_uleb128 command_stream;;
+let name = decode_string command_stream;;
+let type_id = decode_uleb128 command_stream;;
+let ty = Array.get tys type_id;;
+Array.set tms id (mk_mconst (name, ty));;
+
 
 let _ = Text_io.closeIn command_stream;;
