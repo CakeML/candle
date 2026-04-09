@@ -68,10 +68,33 @@ let decode_string fd =
   let s_len = decode_uleb128 fd in
   read_exactly fd s_len;;
 
-let next_command fd =
-  match Text_io.input1 fd with
-  | None -> failwith "next_command: EOF"
-  | Some char -> char;;
+let next_command fd = Text_io.input1 fd;;
+
+
+let pft_tyvar () =
+  let id = decode_uleb128 command_stream in
+  let name = decode_string command_stream in
+  Array.set tys id (mk_vartype name);;
+
+let pft_tyop () =
+  let id = decode_uleb128 command_stream in
+  let name = decode_string command_stream in
+  let n_args = decode_uleb128 command_stream in
+  let rec loop i acc =
+    if i <= 0 then rev acc else
+      let idx = decode_uleb128 command_stream in
+      loop (i - 1) (Array.get tys idx::acc) in
+  let args = loop n_args [] in
+  Array.set tys id (mk_type (name, args));;
+
+let rec command_loop () =
+  match next_command command_stream with
+  | None -> ()
+  | Some cmd ->
+     if cmd = Char.chr 1 then pft_tyvar ()
+     else if cmd = Char.chr 2 then pft_tyop ()
+     else failwith ("command_loop: unsupported command: " ^ String.make 1 cmd);
+     command_loop ();;
 
 (* --- candle-preamble --- *)
 
@@ -95,7 +118,6 @@ let ruleset = decode_string command_stream;;
 let _ =
   if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset);;
 
-let command = next_command command_stream;;
-
+let _ = command_loop ();;
 
 let _ = Text_io.closeIn command_stream;;
