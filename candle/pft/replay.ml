@@ -130,7 +130,7 @@ let pft_var () =
   let ty = Array.get tys type_id in
   Array.set tms id (Kernel.mk_var (name, ty));;
 
-let pft_abs () =
+let pft_mk_abs () =
   let id = decode_uleb128 command_stream in
   let var_id = decode_uleb128 command_stream in
   let body_id = decode_uleb128 command_stream in
@@ -188,6 +188,17 @@ let pft_sym () =
   let th = Array.get ths th_id in
   Array.set ths id (SYM th);;
 
+let pft_prove_hyp () =
+  let id = decode_uleb128 command_stream in
+  let th1_id = decode_uleb128 command_stream in
+  let th2_id = decode_uleb128 command_stream in
+  dprintln (String.concat " " [
+                "PROVE_HYP"; string_of_int id; string_of_int th1_id;
+                string_of_int th2_id]);
+  let th1 = Array.get ths th1_id in
+  let th2 = Array.get ths th2_id in
+  Array.set ths id (PROVE_HYP th2 th1);;
+
 let pft_refl () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
@@ -216,6 +227,17 @@ let pft_mk_comb_thm () =
   let th1 = Array.get ths th1_id in
   let th2 = Array.get ths th2_id in
   Array.set ths id (MK_COMB (th1, th2));;
+
+let pft_abs () =
+  let id = decode_uleb128 command_stream in
+  let tm_id = decode_uleb128 command_stream in
+  let th_id = decode_uleb128 command_stream in
+  dprintln (String.concat " " [
+                "ABS"; string_of_int id; string_of_int tm_id;
+                string_of_int th_id]);
+  let tm = Array.get tms tm_id in
+  let th = Array.get ths th_id in
+  Array.set ths id (ABS tm th);;
 
 let pft_beta () =
   let id = decode_uleb128 command_stream in
@@ -255,7 +277,7 @@ let get_tm_pairs n =
       dprint (string_of_int id2 ^ (if i = 1 then "" else " "));
       let tm1 = Array.get tms id1 in
       let tm2 = Array.get tms id2 in
-      loop (i - 1) ((tm1, tm2)::pairs)
+      loop (i - 1) ((tm2, tm1)::pairs)
   in loop n [];;
 
 let pft_inst () =
@@ -264,6 +286,7 @@ let pft_inst () =
   dprint (String.concat " " ["INST"; string_of_int id; string_of_int th_id]);
   let n_pairs = decode_uleb128 command_stream in
   let pairs = get_tm_pairs n_pairs in
+  dprint "\n";
   let th = Array.get ths th_id in
   Array.set ths id (Kernel.INST pairs th);;
 
@@ -278,16 +301,18 @@ let rec command_loop () =
      else if cmd = Char.chr 0x03 then pft_var ()
      else if cmd = Char.chr 0x04 then pft_const ()
      else if cmd = Char.chr 0x05 then pft_comb ()
-     else if cmd = Char.chr 0x06 then pft_abs ()
+     else if cmd = Char.chr 0x06 then pft_mk_abs ()
      else if cmd = Char.chr 0x10 then pft_refl ()
      else if cmd = Char.chr 0x11 then pft_trans ()
      else if cmd = Char.chr 0x12 then pft_mk_comb_thm ()
+     else if cmd = Char.chr 0x13 then pft_abs ()
      else if cmd = Char.chr 0x14 then pft_beta ()
      else if cmd = Char.chr 0x15 then pft_assume ()
      else if cmd = Char.chr 0x16 then pft_eq_mp ()
      else if cmd = Char.chr 0x17 then pft_deduct_antisym_rule ()
      else if cmd = Char.chr 0x18 then pft_inst ()
      else if cmd = Char.chr 0x20 then pft_sym ()
+     else if cmd = Char.chr 0x21 then pft_prove_hyp ()
      else if cmd = Char.chr 0x30 then pft_new_specification ()
      else if cmd = Char.chr 0x50 then pft_save ()
      else failwith ("command_loop: unsupported command: " ^ cmd_str);
