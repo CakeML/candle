@@ -1,9 +1,9 @@
 let here = "candle/pft/";;
 let extract_footer_path = here ^ "extract_footer";;
 
-let debug = ref true;;
-let dprintln s = if !debug then Format.print_string s; Format.print_newline();;
-let dprint s = if !debug then Format.print_string s;;
+let debug = true;;
+let dprintln s = if debug then Format.print_string s; Format.print_newline();;
+let dprint s = if debug then Format.print_string s;;
 
 let trace_path = here ^ "candle-preamble.pft.bin";;
 
@@ -90,6 +90,7 @@ let cis = Array.make n_ci (Array.make 0 xrefl);;
 
 let saved_ths = ref ([]: (string * thm) list);;
 let save_th name th = saved_ths := (name, th)::(!saved_ths);;
+let load_th name = assoc name (!saved_ths);;
 
 let pft_tyvar () =
   let id = decode_uleb128 command_stream in
@@ -130,7 +131,7 @@ let pft_var () =
   let ty = Array.get tys type_id in
   Array.set tms id (Kernel.mk_var (name, ty));;
 
-let pft_mk_abs () =
+let pft_abs () =
   let id = decode_uleb128 command_stream in
   let var_id = decode_uleb128 command_stream in
   let body_id = decode_uleb128 command_stream in
@@ -174,12 +175,37 @@ let pft_new_specification () =
   let th = Array.get ths th_id in
   Array.set ths id (Kernel.new_specification th);;
 
+let pft_new_type_definition () =
+  let id = decode_uleb128 command_stream in
+  let th_id = decode_uleb128 command_stream in
+  let tyname = decode_string command_stream in
+  let absname = decode_string command_stream in
+  let repname = decode_string command_stream in
+  dprintln (String.concat " " ([
+                  "new_type_definition"; string_of_int id; tyname; absname;
+                  repname]));
+  let th = Array.get ths th_id in
+  failwith ("todo: pft_new_type_definition" ^
+    "(don't know how to handle the two theorems returned by new_basic_type_definition)")
+    (* ;Kernel.new_basic_type_definition (tyname, (absname, (repname, th))) *)
+;;
+
+let pft_compute_init () = failwith "todo: pft_compute_init"
+let pft_compute () = failwith "todo: pft_compute"
+
 let pft_save () =
   let name = decode_string command_stream in
   let th_id = decode_uleb128 command_stream in
   dprintln (String.concat " " ["SAVE"; name; string_of_int th_id]);
   let th = Array.get ths th_id in
   save_th name th;;
+
+let pft_load () =
+  let th_id = decode_uleb128 command_stream in
+  let name = decode_string command_stream in
+  dprintln (String.concat " " ["LOAD"; string_of_int th_id; name]);
+  let th = load_th name in
+  Array.set ths th_id th;;
 
 let pft_sym () =
   let id = decode_uleb128 command_stream in
@@ -197,7 +223,9 @@ let pft_prove_hyp () =
                 string_of_int th2_id]);
   let th1 = Array.get ths th1_id in
   let th2 = Array.get ths th2_id in
-  Array.set ths id (PROVE_HYP th2 th1);;
+  Array.set ths id (PROVE_HYP th1 th2);;
+
+let pft_alpha_thm () = failwith "todo: pft_alpha_thm";;
 
 let pft_refl () =
   let id = decode_uleb128 command_stream in
@@ -228,7 +256,7 @@ let pft_mk_comb_thm () =
   let th2 = Array.get ths th2_id in
   Array.set ths id (MK_COMB (th1, th2));;
 
-let pft_abs () =
+let pft_abs_thm () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
   let th_id = decode_uleb128 command_stream in
@@ -238,6 +266,28 @@ let pft_abs () =
   let tm = Array.get tms tm_id in
   let th = Array.get ths th_id in
   Array.set ths id (ABS tm th);;
+
+let pft_new_const () =
+  let name = decode_string command_stream in
+  let ty_id = decode_uleb128 command_stream in
+  dprintln (String.concat " " ["NEW_CONST"; name; string_of_int ty_id]);
+  let ty = Array.get tys ty_id in
+  Kernel.new_constant (name, ty);;
+
+let pft_new_type () =
+  let name = decode_string command_stream in
+  let arity = decode_uleb128 command_stream in
+  dprintln (String.concat " " ["NEW_TYPE"; name; string_of_int arity]);
+  Kernel.new_type (name, arity);;
+
+let pft_axiom () =
+  let id = decode_uleb128 command_stream in
+  let tm_id = decode_uleb128 command_stream in
+  let name = decode_string command_stream in
+  dprintln (String.concat " " [
+                "AXIOM"; string_of_int id; string_of_int tm_id; name]);
+  let tm = Array.get tms tm_id in
+  Array.set ths id (Kernel.new_axiom tm);;
 
 let pft_beta () =
   let id = decode_uleb128 command_stream in
@@ -268,7 +318,13 @@ let pft_deduct_antisym_rule () =
   let th2 = Array.get ths th2_id in
   Array.set ths id (DEDUCT_ANTISYM_RULE th1 th2);;
 
-let get_tm_pairs n =
+let pft_inst () =
+  let id = decode_uleb128 command_stream in
+  let th_id = decode_uleb128 command_stream in
+  let n_pairs = decode_uleb128 command_stream in
+  dprint (String.concat " " [
+              "INST"; string_of_int id; string_of_int th_id;
+              string_of_int n_pairs]);
   let rec loop i pairs =
     if i <= 0 then rev pairs else
       let id1 = decode_uleb128 command_stream in
@@ -277,45 +333,72 @@ let get_tm_pairs n =
       dprint (string_of_int id2 ^ (if i = 1 then "" else " "));
       let tm1 = Array.get tms id1 in
       let tm2 = Array.get tms id2 in
-      loop (i - 1) ((tm2, tm1)::pairs)
-  in loop n [];;
-
-let pft_inst () =
-  let id = decode_uleb128 command_stream in
-  let th_id = decode_uleb128 command_stream in
-  dprint (String.concat " " ["INST"; string_of_int id; string_of_int th_id]);
-  let n_pairs = decode_uleb128 command_stream in
-  let pairs = get_tm_pairs n_pairs in
+      loop (i - 1) ((tm1, tm2)::pairs) in
+  let pairs = loop n_pairs [] in
   dprint "\n";
   let th = Array.get ths th_id in
   Array.set ths id (Kernel.INST pairs th);;
 
+let pft_inst_type () =
+  let id = decode_uleb128 command_stream in
+  let th_id = decode_uleb128 command_stream in
+  let n_pairs = decode_uleb128 command_stream in
+  dprint (String.concat " " [
+              "INST_TYPE"; string_of_int id; string_of_int th_id;
+              string_of_int n_pairs]);
+  let rec loop i pairs =
+    if i <= 0 then rev pairs else
+      let id1 = decode_uleb128 command_stream in
+      dprint (string_of_int id1 ^ " ");
+      let id2 = decode_uleb128 command_stream in
+      dprint (string_of_int id2 ^ (if i = 1 then "" else " "));
+      let ty1 = Array.get tys id1 in
+      let ty2 = Array.get tys id2 in
+      loop (i - 1) ((ty1, ty2)::pairs) in
+  let pairs = loop n_pairs [] in
+  dprint "\n";
+  let th = Array.get ths th_id in
+  Array.set ths id (Kernel.INST_TYPE pairs th);;
+
 let rec command_loop () =
   match next_command command_stream with
   | None -> ()
-  | Some cmd ->
-     let cmd_str = string_of_int (Char.code cmd) in
-     dprint (cmd_str ^ ": ");
-     if cmd = Char.chr 0x01 then pft_tyvar ()
-     else if cmd = Char.chr 0x02 then pft_tyop ()
-     else if cmd = Char.chr 0x03 then pft_var ()
-     else if cmd = Char.chr 0x04 then pft_const ()
-     else if cmd = Char.chr 0x05 then pft_comb ()
-     else if cmd = Char.chr 0x06 then pft_mk_abs ()
-     else if cmd = Char.chr 0x10 then pft_refl ()
-     else if cmd = Char.chr 0x11 then pft_trans ()
-     else if cmd = Char.chr 0x12 then pft_mk_comb_thm ()
-     else if cmd = Char.chr 0x13 then pft_abs ()
-     else if cmd = Char.chr 0x14 then pft_beta ()
-     else if cmd = Char.chr 0x15 then pft_assume ()
-     else if cmd = Char.chr 0x16 then pft_eq_mp ()
-     else if cmd = Char.chr 0x17 then pft_deduct_antisym_rule ()
-     else if cmd = Char.chr 0x18 then pft_inst ()
-     else if cmd = Char.chr 0x20 then pft_sym ()
-     else if cmd = Char.chr 0x21 then pft_prove_hyp ()
-     else if cmd = Char.chr 0x30 then pft_new_specification ()
-     else if cmd = Char.chr 0x50 then pft_save ()
-     else failwith ("command_loop: unsupported command: " ^ cmd_str);
+  | Some cmd_char ->
+     let cmd = Char.code cmd_char in
+     dprint (string_of_int cmd ^ ": ");
+     if cmd = 0x01 then pft_tyvar ()
+     else if cmd = 0x02 then pft_tyop ()
+     else if cmd = 0x03 then pft_var ()
+     else if cmd = 0x04 then pft_const ()
+     else if cmd = 0x05 then pft_comb ()
+     else if cmd = 0x06 then pft_abs ()
+     else if cmd = 0x07 then pft_new_const ()
+     else if cmd = 0x08 then pft_new_type ()
+     else if cmd = 0x08 then pft_axiom ()
+     else if cmd = 0x10 then pft_refl ()
+     else if cmd = 0x11 then pft_trans ()
+     else if cmd = 0x12 then pft_mk_comb_thm ()
+     else if cmd = 0x13 then pft_abs_thm ()
+     else if cmd = 0x14 then pft_beta ()
+     else if cmd = 0x15 then pft_assume ()
+     else if cmd = 0x16 then pft_eq_mp ()
+     else if cmd = 0x17 then pft_deduct_antisym_rule ()
+     else if cmd = 0x18 then pft_inst ()
+     else if cmd = 0x19 then pft_inst_type ()
+     else if cmd = 0x20 then pft_sym ()
+     else if cmd = 0x21 then pft_prove_hyp ()
+     else if cmd = 0x22 then pft_alpha_thm ()
+     else if cmd = 0x30 then pft_new_specification ()
+     else if cmd = 0x31 then pft_new_type_definition ()
+     else if cmd = 0x40 then pft_compute_init ()
+     else if cmd = 0x41 then pft_compute ()
+     else if cmd = 0x50 then pft_save ()
+     else if cmd = 0x51 then pft_load ()
+     (* We allocate enough memory to fit the peak number of objects, so we can
+        can ignore deletion requests. *)
+     else if 0xE0 <= cmd && cmd <= 0xE3 then ()
+     else if 0xF0 <= cmd && cmd <= 0xF3 then ()
+     else failwith ("command_loop: unsupported command: " ^ string_of_int cmd);
      command_loop ();;
 
 let _ = expect_pft command_stream;;
