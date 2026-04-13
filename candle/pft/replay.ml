@@ -95,70 +95,84 @@ let load_th name = assoc name (!saved_ths);;
 let pft_tyvar () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
-  dprintln (String.concat " " ["TYVAR"; string_of_int id; name]);
-  Array.set tys id (Kernel.mk_vartype name);;
+  dprintln (String.concat " " ["TYVAR"; name]);
+  let result = Kernel.mk_vartype name in
+  dprintln ("  wrote tys[" ^ string_of_int id ^ "]:\n    " ^ string_of_type result);
+  Array.set tys id result;;
 
 let pft_tyop () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let n_args = decode_uleb128 command_stream in
-  dprint (String.concat " "
-              ["TYOP"; string_of_int id; name; string_of_int n_args]);
+  dprintln (String.concat " " ["TYOP"; name]);
   let rec loop i args =
     if i <= 0 then rev args else
       let id = decode_uleb128 command_stream in
-      dprint (string_of_int id ^ (if i = 1 then "" else " "));
-      loop (i - 1) (Array.get tys id::args) in
+      let ty = Array.get tys id in
+      dprintln ("  read tys[" ^ string_of_int id ^ "]:\n    " ^ string_of_type ty);
+      loop (i - 1) (ty::args) in
   let args = loop n_args [] in
-  dprint "\n";
-  Array.set tys id (Kernel.mk_type (name, args));;
+  let result = Kernel.mk_type (name, args) in
+  dprintln ("  wrote tys[" ^ string_of_int id ^ "]:\n    " ^ string_of_type result);
+  Array.set tys id result;;
 
 let pft_const () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let type_id = decode_uleb128 command_stream in
-  dprintln (String.concat " "
-              ["CONST"; string_of_int id; name; string_of_int type_id]);
+  dprintln (String.concat " " ["CONST"; name]);
   let ty = Array.get tys type_id in
-  Array.set tms id (mk_mconst (name, ty));;
+  dprintln ("  read tys[" ^ string_of_int type_id ^ "]:\n    " ^ string_of_type ty);
+  let result = mk_mconst (name, ty) in
+  dprintln ("  wrote tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
+  Array.set tms id result;;
 
 let pft_var () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let type_id = decode_uleb128 command_stream in
-  dprintln (String.concat " "
-              ["VAR"; string_of_int id; name; string_of_int type_id]);
+  dprintln (String.concat " " ["VAR"; name]);
   let ty = Array.get tys type_id in
-  Array.set tms id (Kernel.mk_var (name, ty));;
+  dprintln ("  read tys[" ^ string_of_int type_id ^ "]:\n    " ^ string_of_type ty);
+  let result = Kernel.mk_var (name, ty) in
+  dprintln ("  wrote tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
+  Array.set tms id result;;
 
 let pft_abs () =
   let id = decode_uleb128 command_stream in
   let var_id = decode_uleb128 command_stream in
   let body_id = decode_uleb128 command_stream in
-  dprintln (String.concat " "
-              ["ABS"; string_of_int id; string_of_int var_id;
-               string_of_int body_id]);
+  dprintln "ABS";
   let var_tm = Array.get tms var_id in
+  dprintln ("  read tms[" ^ string_of_int var_id ^ "]:\n    " ^ string_of_term var_tm);
   let body_tm = Array.get tms body_id in
-  Array.set tms id (Kernel.mk_abs (var_tm, body_tm));;
+  dprintln ("  read tms[" ^ string_of_int body_id ^ "]:\n    " ^ string_of_term body_tm);
+  let result = Kernel.mk_abs (var_tm, body_tm) in
+  dprintln ("  wrote tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
+  Array.set tms id result;;
 
 let pft_comb () =
   let id = decode_uleb128 command_stream in
   let rator_id = decode_uleb128 command_stream in
   let rand_id = decode_uleb128 command_stream in
-  dprintln (String.concat " "
-              ["COMB"; string_of_int id; string_of_int rator_id;
-               string_of_int rand_id]);
+  dprintln "COMB";
   let rator_tm = Array.get tms rator_id in
+  dprintln ("  read tms[" ^ string_of_int rator_id ^ "]:\n    " ^ string_of_term rator_tm);
   let rand_tm = Array.get tms rand_id in
-  Array.set tms id (mk_comb (rator_tm, rand_tm));;
+  dprintln ("  read tms[" ^ string_of_int rand_id ^ "]:\n    " ^ string_of_term rand_tm);
+  let result = mk_comb (rator_tm, rand_tm) in
+  dprintln ("  wrote tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
+  Array.set tms id result;;
 
 let pft_assume () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " ["ASSUME"; string_of_int id; string_of_int tm_id]);
+  dprintln "ASSUME";
   let tm = Array.get tms tm_id in
-  Array.set ths id (Kernel.ASSUME tm)
+  dprintln ("  read tms[" ^ string_of_int tm_id ^ "]:\n    " ^ string_of_term tm);
+  let result = Kernel.ASSUME tm in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result
 
 let pft_new_specification () =
   let id = decode_uleb128 command_stream in
@@ -169,11 +183,12 @@ let pft_new_specification () =
       let name = decode_string command_stream in
       loop (i - 1) (name::names) in
   let names = loop n_names [] in
-  dprintln (String.concat " "
-              (["new_specification"; string_of_int id; string_of_int th_id;
-                string_of_int n_names] @ names));
+  dprintln (String.concat " " (["new_specification"] @ names));
   let th = Array.get ths th_id in
-  Array.set ths id (Kernel.new_specification th);;
+  dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
+  let result = Kernel.new_specification th in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_new_type_definition () =
   let id = decode_uleb128 command_stream in
@@ -182,8 +197,7 @@ let pft_new_type_definition () =
   let absname = decode_string command_stream in
   let repname = decode_string command_stream in
   dprintln (String.concat " " ([
-                  "new_type_definition"; string_of_int id; tyname; absname;
-                  repname]));
+                  "new_type_definition"; tyname; absname; repname]));
   let th = Array.get ths th_id in
   failwith ("todo: pft_new_type_definition" ^
     "(don't know how to handle the two theorems returned by new_basic_type_definition)")
@@ -196,82 +210,97 @@ let pft_compute () = failwith "todo: pft_compute"
 let pft_save () =
   let name = decode_string command_stream in
   let th_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " ["SAVE"; name; string_of_int th_id]);
+  dprintln (String.concat " " ["SAVE"; name]);
   let th = Array.get ths th_id in
+  dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
   save_th name th;;
 
 let pft_load () =
   let th_id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
-  dprintln (String.concat " " ["LOAD"; string_of_int th_id; name]);
+  dprintln (String.concat " " ["LOAD"; name]);
   let th = load_th name in
+  dprintln ("  wrote ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
   Array.set ths th_id th;;
 
 let pft_sym () =
   let id = decode_uleb128 command_stream in
   let th_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " ["SYM"; string_of_int id; string_of_int th_id]);
+  dprintln "SYM";
   let th = Array.get ths th_id in
-  Array.set ths id (SYM th);;
+  dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
+  let result = SYM th in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_prove_hyp () =
   let id = decode_uleb128 command_stream in
   let th1_id = decode_uleb128 command_stream in
   let th2_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " [
-                "PROVE_HYP"; string_of_int id; string_of_int th1_id;
-                string_of_int th2_id]);
+  dprintln "PROVE_HYP";
   let th1 = Array.get ths th1_id in
+  dprintln ("  read ths[" ^ string_of_int th1_id ^ "]:\n    " ^ string_of_thm th1);
   let th2 = Array.get ths th2_id in
-  Array.set ths id (PROVE_HYP th1 th2);;
-
-let pft_alpha_thm () = failwith "todo: pft_alpha_thm";;
+  dprintln ("  read ths[" ^ string_of_int th2_id ^ "]:\n    " ^ string_of_thm th2);
+  let result = PROVE_HYP th1 th2 in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_refl () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " ["REFL"; string_of_int id; string_of_int tm_id]);
+  dprintln "REFL";
   let tm = Array.get tms tm_id in
-  Array.set ths id (REFL tm);;
+  dprintln ("  read tms[" ^ string_of_int tm_id ^ "]:\n    " ^ string_of_term tm);
+  let result = REFL tm in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_trans () =
   let id = decode_uleb128 command_stream in
   let th1_id = decode_uleb128 command_stream in
   let th2_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " [
-                "TRANS"; string_of_int id; string_of_int th1_id;
-                string_of_int th2_id]);
+  dprintln "TRANS";
   let th1 = Array.get ths th1_id in
+  dprintln ("  read ths[" ^ string_of_int th1_id ^ "]:\n    " ^ string_of_thm th1);
   let th2 = Array.get ths th2_id in
-  Array.set ths id (Kernel.TRANS th1 th2);;
+  dprintln ("  read ths[" ^ string_of_int th2_id ^ "]:\n    " ^ string_of_thm th2);
+  let result = Kernel.TRANS th1 th2 in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_mk_comb_thm () =
   let id = decode_uleb128 command_stream in
   let th1_id = decode_uleb128 command_stream in
   let th2_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " [
-                "MK_COMB"; string_of_int id; string_of_int th1_id;
-                string_of_int th2_id]);
+  dprintln "MK_COMB";
   let th1 = Array.get ths th1_id in
+  dprintln ("  read ths[" ^ string_of_int th1_id ^ "]:\n    " ^ string_of_thm th1);
   let th2 = Array.get ths th2_id in
-  Array.set ths id (MK_COMB (th1, th2));;
+  dprintln ("  read ths[" ^ string_of_int th2_id ^ "]:\n    " ^ string_of_thm th2);
+  let result = MK_COMB (th1, th2) in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_abs_thm () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
   let th_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " [
-                "ABS"; string_of_int id; string_of_int tm_id;
-                string_of_int th_id]);
+  dprintln "ABS_THM";
   let tm = Array.get tms tm_id in
+  dprintln ("  read tms[" ^ string_of_int tm_id ^ "]:\n    " ^ string_of_term tm);
   let th = Array.get ths th_id in
-  Array.set ths id (ABS tm th);;
+  dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
+  let result = ABS tm th in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_new_const () =
   let name = decode_string command_stream in
   let ty_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " ["NEW_CONST"; name; string_of_int ty_id]);
+  dprintln (String.concat " " ["NEW_CONST"; name]);
   let ty = Array.get tys ty_id in
+  dprintln ("  read tys[" ^ string_of_int ty_id ^ "]:\n    " ^ string_of_type ty);
   Kernel.new_constant (name, ty);;
 
 let pft_new_type () =
@@ -284,81 +313,90 @@ let pft_axiom () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
-  dprintln (String.concat " " [
-                "AXIOM"; string_of_int id; string_of_int tm_id; name]);
+  dprintln (String.concat " " ["AXIOM"; name]);
   let tm = Array.get tms tm_id in
-  Array.set ths id (Kernel.new_axiom tm);;
+  dprintln ("  read tms[" ^ string_of_int tm_id ^ "]:\n    " ^ string_of_term tm);
+  let result = Kernel.new_axiom tm in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_beta () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " ["BETA"; string_of_int id; string_of_int tm_id]);
+  dprintln "BETA";
   let tm = Array.get tms tm_id in
-  Array.set ths id (Kernel.BETA tm);;
+  dprintln ("  read tms[" ^ string_of_int tm_id ^ "]:\n    " ^ string_of_term tm);
+  let result = Kernel.BETA tm in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_eq_mp () =
   let id = decode_uleb128 command_stream in
   let eq_id = decode_uleb128 command_stream in
   let th_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " [
-                "EQ_MP"; string_of_int id; string_of_int eq_id;
-                string_of_int th_id]);
+  dprintln "EQ_MP";
   let eq = Array.get ths eq_id in
+  dprintln ("  read ths[" ^ string_of_int eq_id ^ "]:\n    " ^ string_of_thm eq);
   let th = Array.get ths th_id in
-  Array.set ths id (EQ_MP eq th);;
+  dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
+  let result = EQ_MP eq th in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_deduct_antisym_rule () =
   let id = decode_uleb128 command_stream in
   let th1_id = decode_uleb128 command_stream in
   let th2_id = decode_uleb128 command_stream in
-  dprintln (String.concat " " [
-                "DEDUCT_ANTISYM_RULE"; string_of_int id; string_of_int th1_id;
-                string_of_int th2_id]);
+  dprintln "DEDUCT_ANTISYM_RULE";
   let th1 = Array.get ths th1_id in
+  dprintln ("  read ths[" ^ string_of_int th1_id ^ "]:\n    " ^ string_of_thm th1);
   let th2 = Array.get ths th2_id in
-  Array.set ths id (DEDUCT_ANTISYM_RULE th1 th2);;
+  dprintln ("  read ths[" ^ string_of_int th2_id ^ "]:\n    " ^ string_of_thm th2);
+  let result = DEDUCT_ANTISYM_RULE th1 th2 in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_inst () =
   let id = decode_uleb128 command_stream in
   let th_id = decode_uleb128 command_stream in
   let n_pairs = decode_uleb128 command_stream in
-  dprint (String.concat " " [
-              "INST"; string_of_int id; string_of_int th_id;
-              string_of_int n_pairs]);
+  dprintln "INST";
   let rec loop i pairs =
     if i <= 0 then rev pairs else
       let id1 = decode_uleb128 command_stream in
-      dprint (string_of_int id1 ^ " ");
       let id2 = decode_uleb128 command_stream in
-      dprint (string_of_int id2 ^ (if i = 1 then "" else " "));
       let tm1 = Array.get tms id1 in
+      dprintln ("  read tms[" ^ string_of_int id1 ^ "]:\n    " ^ string_of_term tm1);
       let tm2 = Array.get tms id2 in
+      dprintln ("  read tms[" ^ string_of_int id2 ^ "]:\n    " ^ string_of_term tm2);
       loop (i - 1) ((tm2, tm1)::pairs) in
   let pairs = loop n_pairs [] in
-  dprint "\n";
   let th = Array.get ths th_id in
-  Array.set ths id (Kernel.INST pairs th);;
+  dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
+  let result = Kernel.INST pairs th in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let pft_inst_type () =
   let id = decode_uleb128 command_stream in
   let th_id = decode_uleb128 command_stream in
   let n_pairs = decode_uleb128 command_stream in
-  dprint (String.concat " " [
-              "INST_TYPE"; string_of_int id; string_of_int th_id;
-              string_of_int n_pairs]);
+  dprintln "INST_TYPE";
   let rec loop i pairs =
     if i <= 0 then rev pairs else
       let id1 = decode_uleb128 command_stream in
-      dprint (string_of_int id1 ^ " ");
       let id2 = decode_uleb128 command_stream in
-      dprint (string_of_int id2 ^ (if i = 1 then "" else " "));
       let ty1 = Array.get tys id1 in
+      dprintln ("  read tys[" ^ string_of_int id1 ^ "]:\n    " ^ string_of_type ty1);
       let ty2 = Array.get tys id2 in
+      dprintln ("  read tys[" ^ string_of_int id2 ^ "]:\n    " ^ string_of_type ty2);
       loop (i - 1) ((ty2, ty1)::pairs) in
   let pairs = loop n_pairs [] in
-  dprint "\n";
   let th = Array.get ths th_id in
-  Array.set ths id (Kernel.INST_TYPE pairs th);;
+  dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
+  let result = Kernel.INST_TYPE pairs th in
+  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  Array.set ths id result;;
 
 let rec command_loop () =
   match next_command command_stream with
