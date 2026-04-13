@@ -333,7 +333,7 @@ let pft_inst () =
       dprint (string_of_int id2 ^ (if i = 1 then "" else " "));
       let tm1 = Array.get tms id1 in
       let tm2 = Array.get tms id2 in
-      loop (i - 1) ((tm1, tm2)::pairs) in
+      loop (i - 1) ((tm2, tm1)::pairs) in
   let pairs = loop n_pairs [] in
   dprint "\n";
   let th = Array.get ths th_id in
@@ -354,7 +354,7 @@ let pft_inst_type () =
       dprint (string_of_int id2 ^ (if i = 1 then "" else " "));
       let ty1 = Array.get tys id1 in
       let ty2 = Array.get tys id2 in
-      loop (i - 1) ((ty1, ty2)::pairs) in
+      loop (i - 1) ((ty2, ty1)::pairs) in
   let pairs = loop n_pairs [] in
   dprint "\n";
   let th = Array.get ths th_id in
