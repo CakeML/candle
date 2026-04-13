@@ -412,7 +412,7 @@ let rec command_loop () =
      else if cmd = 0x06 then pft_abs ()
      else if cmd = 0x07 then pft_new_const ()
      else if cmd = 0x08 then pft_new_type ()
-     else if cmd = 0x08 then pft_axiom ()
+     else if cmd = 0x09 then pft_axiom ()
      else if cmd = 0x10 then pft_refl ()
      else if cmd = 0x11 then pft_trans ()
      else if cmd = 0x12 then pft_mk_comb_thm ()
@@ -425,7 +425,6 @@ let rec command_loop () =
      else if cmd = 0x19 then pft_inst_type ()
      else if cmd = 0x20 then pft_sym ()
      else if cmd = 0x21 then pft_prove_hyp ()
-     else if cmd = 0x22 then pft_alpha_thm ()
      else if cmd = 0x30 then pft_new_specification ()
      else if cmd = 0x31 then pft_new_type_definition ()
      else if cmd = 0x40 then pft_compute_init ()
@@ -434,8 +433,13 @@ let rec command_loop () =
      else if cmd = 0x51 then pft_load ()
      (* We allocate enough memory to fit the peak number of objects, so we can
         can ignore deletion requests. *)
-     else if 0xE0 <= cmd && cmd <= 0xE3 then ()
-     else if 0xF0 <= cmd && cmd <= 0xF3 then ()
+     else if 0xE0 <= cmd && cmd <= 0xE3 then
+       let _ = decode_uleb128 command_stream in
+       ()
+     else if 0xF0 <= cmd && cmd <= 0xF3 then
+       let _ = decode_uleb128 command_stream in
+       let _ = decode_uleb128 command_stream in
+       ()
      else failwith ("command_loop: unsupported command: " ^ string_of_int cmd);
      command_loop ();;
 
