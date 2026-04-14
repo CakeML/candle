@@ -91,6 +91,12 @@ let cis = Array.make n_ci (Array.make 0 xrefl);;
 let saved_ths = ref ([]: (string * thm) list);;
 let save_th name th = saved_ths := (name, th)::(!saved_ths);;
 let load_th name = assoc name (!saved_ths);;
+let print_saved () =
+  do_list (fun (s, th) ->
+      print_endline (s ^ ": ");
+      Pretty.print_stdout pp_print_colored_thm th;
+      print_newline ()
+    ) !saved_ths;;
 
 let pft_tyvar () =
   let id = decode_uleb128 command_stream in

@@ -170,6 +170,7 @@ end;;
 
 module Array = struct
   let make n x = Cake.Array.array n x
+  let length a = Cake.Array.length a
   let set a n x = try Cake.Array.update a n x
     with Subscript -> raise (Invalid_argument "Array.set")
   let get a n = try Cake.Array.sub a n
