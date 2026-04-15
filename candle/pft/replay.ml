@@ -439,13 +439,19 @@ let rec command_loop () =
      else if cmd = 0x51 then pft_load ()
      (* We allocate enough memory to fit the peak number of objects, so we can
         can ignore deletion requests. *)
-     else if 0xE0 <= cmd && cmd <= 0xE3 then
-       let _ = decode_uleb128 command_stream in
-       ()
-     else if 0xF0 <= cmd && cmd <= 0xF3 then
-       let _ = decode_uleb128 command_stream in
-       let _ = decode_uleb128 command_stream in
-       ()
+     else if 0xE0 <= cmd && cmd <= 0xE3 then (
+       decode_uleb128 command_stream; ())
+     else if 0xF0 <= cmd && cmd <= 0xF3 then (
+       decode_uleb128 command_stream;
+       decode_uleb128 command_stream; ())
+     else if cmd = 0xFF then (
+       dprintln "Done (reached footer)";
+       decode_uleb128 command_stream;
+       decode_uleb128 command_stream;
+       decode_uleb128 command_stream;
+       decode_uleb128 command_stream;
+       Text_io.input1 command_stream;
+       Text_io.input1 command_stream; ())
      else failwith ("command_loop: unsupported command: " ^ string_of_int cmd);
      command_loop ();;
 
