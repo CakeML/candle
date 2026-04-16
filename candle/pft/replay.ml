@@ -1,13 +1,19 @@
 let here = "candle/pft/";;
 let extract_footer_path = here ^ "extract_footer";;
 
+let saved_ths = ref ([]: (string * thm) list);;
+let save_th name th = saved_ths := (name, th)::(!saved_ths);;
+let load_th name = assoc name (!saved_ths);;
+let print_saved () =
+  do_list (fun (s, th) ->
+      print_endline (s ^ ": ");
+      Pretty.print_stdout pp_print_colored_thm th;
+      print_newline ()
+    ) !saved_ths;;
+
 let debug = true;;
 let dprintln s = if debug then Format.print_string s; Format.print_newline();;
 let dprint s = if debug then Format.print_string s;;
-
-let trace_path = here ^ "candle-preamble.pft.bin";;
-
-let command_stream = Text_io.openIn trace_path;;
 
 let decode_uleb128 : Text_io.instream -> int =
   let zero     = Cake.Word8.fromInt   0 in
@@ -31,12 +37,16 @@ let process_footer trace_path =
   let _ = if r <> 0 then failwith ("process_footer: failed to extract footer") in
   let stream = Text_io.openIn (trace_path ^ ".footer") in
   try
-    let n_ty = decode_uleb128 stream in
-    let n_tm = decode_uleb128 stream in
-    let n_th = decode_uleb128 stream in
-    let n_ci = decode_uleb128 stream in
-    Text_io.closeIn stream;
-    (n_ty, n_tm, n_th, n_ci)
+    match Text_io.input1 stream with
+    | None -> failwith "EOF"
+    | Some cmd ->
+       if Char.code cmd <> 0xFF then failwith "bad opcode" else
+       let n_ty = decode_uleb128 stream in
+       let n_tm = decode_uleb128 stream in
+       let n_th = decode_uleb128 stream in
+       let n_ci = decode_uleb128 stream in
+       Text_io.closeIn stream;
+       (n_ty, n_tm, n_th, n_ci)
   with e ->
     Text_io.closeIn stream;
     (match e with
@@ -77,6 +87,9 @@ let next_command fd = Text_io.input1 fd;;
 
 (* --- candle-preamble --- *)
 
+let trace_path = here ^ "bool.candle.pft.bin";;
+let command_stream = Text_io.openIn trace_path;;
+
 let (n_ty, n_tm, n_th, n_ci) = process_footer trace_path;;
 
 (* Initial values for the arrays *)
@@ -88,22 +101,12 @@ let tms = Array.make n_tm xvar;;
 let ths = Array.make n_th xrefl;;
 let cis = Array.make n_ci (Array.make 0 xrefl);;
 
-let saved_ths = ref ([]: (string * thm) list);;
-let save_th name th = saved_ths := (name, th)::(!saved_ths);;
-let load_th name = assoc name (!saved_ths);;
-let print_saved () =
-  do_list (fun (s, th) ->
-      print_endline (s ^ ": ");
-      Pretty.print_stdout pp_print_colored_thm th;
-      print_newline ()
-    ) !saved_ths;;
-
 let pft_tyvar () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   dprintln (String.concat " " ["TYVAR"; name]);
   let result = Kernel.mk_vartype name in
-  dprintln ("  wrote tys[" ^ string_of_int id ^ "]:\n    " ^ string_of_type result);
+  dprintln ("  writing tys[" ^ string_of_int id ^ "]:\n    " ^ string_of_type result);
   Array.set tys id result;;
 
 let pft_tyop () =
@@ -119,7 +122,7 @@ let pft_tyop () =
       loop (i - 1) (ty::args) in
   let args = loop n_args [] in
   let result = Kernel.mk_type (name, args) in
-  dprintln ("  wrote tys[" ^ string_of_int id ^ "]:\n    " ^ string_of_type result);
+  dprintln ("  writing tys[" ^ string_of_int id ^ "]:\n    " ^ string_of_type result);
   Array.set tys id result;;
 
 let pft_const () =
@@ -130,7 +133,7 @@ let pft_const () =
   let ty = Array.get tys type_id in
   dprintln ("  read tys[" ^ string_of_int type_id ^ "]:\n    " ^ string_of_type ty);
   let result = mk_mconst (name, ty) in
-  dprintln ("  wrote tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
+  dprintln ("  writing tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
   Array.set tms id result;;
 
 let pft_var () =
@@ -141,7 +144,7 @@ let pft_var () =
   let ty = Array.get tys type_id in
   dprintln ("  read tys[" ^ string_of_int type_id ^ "]:\n    " ^ string_of_type ty);
   let result = Kernel.mk_var (name, ty) in
-  dprintln ("  wrote tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
+  dprintln ("  writing tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
   Array.set tms id result;;
 
 let pft_abs () =
@@ -154,7 +157,7 @@ let pft_abs () =
   let body_tm = Array.get tms body_id in
   dprintln ("  read tms[" ^ string_of_int body_id ^ "]:\n    " ^ string_of_term body_tm);
   let result = Kernel.mk_abs (var_tm, body_tm) in
-  dprintln ("  wrote tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
+  dprintln ("  writing tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
   Array.set tms id result;;
 
 let pft_comb () =
@@ -167,7 +170,7 @@ let pft_comb () =
   let rand_tm = Array.get tms rand_id in
   dprintln ("  read tms[" ^ string_of_int rand_id ^ "]:\n    " ^ string_of_term rand_tm);
   let result = mk_comb (rator_tm, rand_tm) in
-  dprintln ("  wrote tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
+  dprintln ("  writing tms[" ^ string_of_int id ^ "]:\n    " ^ string_of_term result);
   Array.set tms id result;;
 
 let pft_assume () =
@@ -177,7 +180,7 @@ let pft_assume () =
   let tm = Array.get tms tm_id in
   dprintln ("  read tms[" ^ string_of_int tm_id ^ "]:\n    " ^ string_of_term tm);
   let result = Kernel.ASSUME tm in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result
 
 let pft_new_specification () =
@@ -193,7 +196,7 @@ let pft_new_specification () =
   let th = Array.get ths th_id in
   dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
   let result = Kernel.new_specification th in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_new_type_definition () =
@@ -205,10 +208,13 @@ let pft_new_type_definition () =
   dprintln (String.concat " " ([
                   "new_type_definition"; tyname; absname; repname]));
   let th = Array.get ths th_id in
-  failwith ("todo: pft_new_type_definition" ^
-    "(don't know how to handle the two theorems returned by new_basic_type_definition)")
-    (* ;Kernel.new_basic_type_definition (tyname, (absname, (repname, th))) *)
-;;
+  dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
+  let absth, repth =
+    Kernel.new_basic_type_definition (tyname, (absname, (repname, th))) in
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm absth);
+  Array.set ths id absth;
+  dprintln ("  writing ths[" ^ string_of_int (id + 1) ^ "]:\n    " ^ string_of_thm repth);
+  Array.set ths (id + 1) repth;;
 
 let pft_compute_init () = failwith "todo: pft_compute_init"
 let pft_compute () = failwith "todo: pft_compute"
@@ -226,7 +232,7 @@ let pft_load () =
   let name = decode_string command_stream in
   dprintln (String.concat " " ["LOAD"; name]);
   let th = load_th name in
-  dprintln ("  wrote ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
+  dprintln ("  writing ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
   Array.set ths th_id th;;
 
 let pft_sym () =
@@ -236,7 +242,7 @@ let pft_sym () =
   let th = Array.get ths th_id in
   dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
   let result = SYM th in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_prove_hyp () =
@@ -249,7 +255,7 @@ let pft_prove_hyp () =
   let th2 = Array.get ths th2_id in
   dprintln ("  read ths[" ^ string_of_int th2_id ^ "]:\n    " ^ string_of_thm th2);
   let result = PROVE_HYP th1 th2 in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_refl () =
@@ -259,7 +265,7 @@ let pft_refl () =
   let tm = Array.get tms tm_id in
   dprintln ("  read tms[" ^ string_of_int tm_id ^ "]:\n    " ^ string_of_term tm);
   let result = REFL tm in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_trans () =
@@ -272,7 +278,7 @@ let pft_trans () =
   let th2 = Array.get ths th2_id in
   dprintln ("  read ths[" ^ string_of_int th2_id ^ "]:\n    " ^ string_of_thm th2);
   let result = Kernel.TRANS th1 th2 in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_mk_comb_thm () =
@@ -285,7 +291,7 @@ let pft_mk_comb_thm () =
   let th2 = Array.get ths th2_id in
   dprintln ("  read ths[" ^ string_of_int th2_id ^ "]:\n    " ^ string_of_thm th2);
   let result = MK_COMB (th1, th2) in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_abs_thm () =
@@ -298,7 +304,7 @@ let pft_abs_thm () =
   let th = Array.get ths th_id in
   dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
   let result = ABS tm th in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_new_const () =
@@ -323,7 +329,7 @@ let pft_axiom () =
   let tm = Array.get tms tm_id in
   dprintln ("  read tms[" ^ string_of_int tm_id ^ "]:\n    " ^ string_of_term tm);
   let result = Kernel.new_axiom tm in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_beta () =
@@ -333,7 +339,7 @@ let pft_beta () =
   let tm = Array.get tms tm_id in
   dprintln ("  read tms[" ^ string_of_int tm_id ^ "]:\n    " ^ string_of_term tm);
   let result = Kernel.BETA tm in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_eq_mp () =
@@ -346,7 +352,7 @@ let pft_eq_mp () =
   let th = Array.get ths th_id in
   dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
   let result = EQ_MP eq th in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_deduct_antisym_rule () =
@@ -359,7 +365,7 @@ let pft_deduct_antisym_rule () =
   let th2 = Array.get ths th2_id in
   dprintln ("  read ths[" ^ string_of_int th2_id ^ "]:\n    " ^ string_of_thm th2);
   let result = DEDUCT_ANTISYM_RULE th1 th2 in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_inst () =
@@ -380,7 +386,7 @@ let pft_inst () =
   let th = Array.get ths th_id in
   dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
   let result = Kernel.INST pairs th in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let pft_inst_type () =
@@ -401,7 +407,7 @@ let pft_inst_type () =
   let th = Array.get ths th_id in
   dprintln ("  read ths[" ^ string_of_int th_id ^ "]:\n    " ^ string_of_thm th);
   let result = Kernel.INST_TYPE pairs th in
-  dprintln ("  wrote ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
+  dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
 let rec command_loop () =
