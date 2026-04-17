@@ -45,7 +45,7 @@ module type NUM = sig
 
   val min_num : num -> num -> num
   val max_num : num -> num -> num
-  val compare : num -> num -> order
+  val compare : num -> num -> int
   val gcd_num : num -> num -> num
 
   val ( **/) : num -> num -> num
@@ -220,19 +220,21 @@ let floor_num n =
 ;;
 
 let compare x y =
+  let rat_compare x y =
+    if Cake.Rat.(<) x y then -1 else if Cake.Rat.(>) x y then 1 else 0 in
   match x, y with
-  | Int i, Int j -> Cake.Int.compare i j
-  | Int i, Rat r -> Cake.Rat.compare (Cake.Rat.fromInt i) r
-  | Rat r, Int j -> Cake.Rat.compare r (Cake.Rat.fromInt j)
-  | Rat i, Rat j -> Cake.Rat.compare i j
+  | Int i, Int j -> if i < j then -1 else if i > j then 1 else 0
+  | Int i, Rat r -> rat_compare (Cake.Rat.fromInt i) r
+  | Rat r, Int j -> rat_compare r (Cake.Rat.fromInt j)
+  | Rat i, Rat j -> rat_compare i j
 ;;
 
-let ( </) x y = compare x y = Less;;
-let ( <=/) x y = compare x y <> Greater;;
-let ( >/) x y = compare x y = Greater;;
-let ( >=/) x y = compare x y <> Less;;
-let ( =/) x y = compare x y = Equal;;
-let ( <>/) x y = compare x y <> Equal;;
+let ( </) x y = compare x y < 0;;
+let ( <=/) x y = compare x y <= 0;;
+let ( >/) x y = compare x y > 0;;
+let ( >=/) x y = compare x y >= 0;;
+let ( =/) x y = compare x y = 0;;
+let ( <>/) x y = compare x y <> 0;;
 
 let lt_num = ( </);;
 let le_num = ( <=/);;

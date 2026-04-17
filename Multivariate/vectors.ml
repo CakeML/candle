@@ -725,11 +725,15 @@ let NORM_ARITH =
             augment_norm (rat_of_term c >=/ num 0) n acc
       | _ -> augment_norm true tm acc in
     find_normedterms in
-  let lincomb_neg t = mapf minus_num t in
-  let lincomb_cmul c t = if c =/ num 0 then undefined else mapf (( */ ) c) t in
-  let lincomb_add l r = combine (+/) (fun x -> x =/ num 0) l r in
+  (* Due to the lack of let-polymorphism in Candle, we avoid type variables
+     here to avoid confusing problems down the road. *)
+  let lincomb_neg (t: (term,num) func) = mapf minus_num t in
+  let lincomb_cmul c t =
+    if c =/ num 0 then undefined Term.compare else mapf (( */ ) c) t in
+  let lincomb_add (l: (term,num) func) r =
+    combine (+/) (fun x -> x =/ num 0) l r in
   let lincomb_sub l r = lincomb_add l (lincomb_neg r) in
-  let lincomb_eq l r = lincomb_sub l r = undefined in
+  let lincomb_eq l r = lincomb_sub l r = undefined Term.compare in
   let rec vector_lincomb tm =
     match tm with
         Comb(Comb(Const("vector_add",_),l),r) ->
@@ -741,8 +745,8 @@ let NORM_ARITH =
       | Comb(Const("vector_neg",_),t) ->
           lincomb_neg (vector_lincomb t)
       | Comb(Const("vec",_),n) when is_numeral n && dest_numeral n =/ num 0 ->
-          undefined
-      | _ -> (tm |=> num 1) in
+          undefined Term.compare
+      | _ -> (tm |=> num 1) Term.compare in
   let vector_lincombs tms =
     itlist (fun t fns ->
                   if can (assoc t) fns then fns else
@@ -767,8 +771,10 @@ let NORM_ARITH =
   let evaluate env lin =
     foldr (fun x c s -> s +/ c */ apply env x) lin (num 0) in
   let rec solve (vs,eqs) =
+    let lincomb_add l r = combine (+/) (fun x -> x =/ num 0) l r in
+    let lincomb_cmul c t = if c =/ num 0 then undefined Int.compare else mapf (( */ ) c) t in
     match (vs,eqs) with
-      [],[] -> (0 |=> num 1)
+      [],[] -> (0 |=> num 1) Int.compare
     | _,eq::oeqs ->
           let v = hd(intersect vs (dom eq)) in
           let c = apply eq v in
@@ -872,10 +878,10 @@ let NORM_ARITH =
       match tm with
         Comb(Comb(Const("vector_add",_),lt),rt) ->
           let l = headvector lt and r = headvector rt in
-          if l < r then (APPLY_pthb THENC
+          if Term.(<) l r then (APPLY_pthb THENC
                          RAND_CONV VECTOR_ADD_CONV THENC
                          APPLY_pthd) tm
-          else if r < l then (APPLY_pthc THENC
+          else if Term.(<) r l then (APPLY_pthc THENC
                               RAND_CONV VECTOR_ADD_CONV THENC
                               APPLY_pthd) tm else
           (APPLY_pth9 THENC
@@ -910,7 +916,7 @@ let NORM_ARITH =
       let sources = map (rand o rand o concl) nubs
       and rawdests = itlist (find_normedterms o lhand o concl) (ges @ gts) [] in
       if not (forall fst rawdests) then failwith "Sanity check" else
-      let dests = setify (map snd rawdests) in
+      let dests = setify Term.(<=) (map snd rawdests) in
       let srcfuns = map vector_lincomb sources
       and destfuns = map vector_lincomb dests in
       let vvs = itlist (union o dom) (srcfuns @ destfuns) [] in
@@ -919,18 +925,18 @@ let NORM_ARITH =
       let srccombs = zip srcfuns nvs in
       let consider d =
         let coefficients x =
-            let inp = if defined d x then 0 |=> minus_num(apply d x)
-                      else undefined in
+            let inp = if defined d x then (0 |=> minus_num(apply d x)) Int.compare
+                      else undefined Int.compare in
           itlist (fun (f,v) g -> if defined f x then (v |-> apply f x) g else g)
                  srccombs inp in
         let equations = map coefficients vvs
-        and inequalities = map (fun n -> (n |=> num 1)) nvs in
+        and inequalities = map (fun n -> (n |=> num 1) Int.compare) nvs in
         let plausiblevertices f =
           let flippedequations = map (itlist flip f) equations in
           let constraints = flippedequations @ inequalities in
           let rawverts = vertices nvs constraints in
           let check_solution v =
-            let f = itlist2 (|->) nvs v (0 |=> num 1) in
+            let f = itlist2 (|->) nvs v ((0 |=> num 1) Int.compare) in
             forall (fun e -> evaluate f e =/ num 0) flippedequations in
           let goodverts = filter check_solution rawverts in
           let signfixups = map (fun n -> if mem n f then -1 else 1) nvs in
@@ -1818,7 +1824,7 @@ let EXPAND_VSUM_CONV =
     let nty = hd(tl(snd(dest_type(snd(dest_fun_ty(type_of ftm)))))) in
     let ilist = [nty,n_ty] in
     let ifn = inst ilist and tfn = INST_TYPE ilist in
-    if n < m then
+    if n </ m then
       let th1 = INST [ftm,ifn f_tm; mtm,m_tm; ntm,n_tm] (tfn pth_0) in
       MP th1 (EQT_ELIM(NUM_LT_CONV(lhand(concl th1))))
     else if n = m then CONV_RULE (RAND_CONV(TRY_CONV BETA_CONV))

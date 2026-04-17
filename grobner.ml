@@ -481,21 +481,19 @@ let RING_AND_IDEAL_CONV =
          CONV_RULE (BINOP_CONV RING_NORMALIZE_CONV)
                    (AP_TERM (mk_comb(ring_mul_tm,holify_polynomial vars [m]))
                             th) in
-      (* OA Lack of pointer equality makes this useless in Candle,
-            and lack of let polymorphism gets type checking to fail
-            on this definition. *)
-      (* let rec assoceq a l =
-        match l with
-         [] -> failwith "assoceq"
-        | (x,y)::t -> if x==a then y else assoceq a t in *)
       let run_proof =
         if is_iff(snd(strip_forall(concl RABINOWITSCH_THM))) then
          (Format.print_string("Generating HOL version of proof");
           Format.print_newline();
           let execache = ref [] in
           let memoize prf x = (execache := (prf,x)::(!execache)); x in
+          (* Copied due to current lack of let polymorphism *)
+          let rec assoceq a l =
+            match l with
+              [] -> failwith "assoceq"
+            | (x,y)::t -> if x = a then y else assoceq a t in
           let rec run_proof vars prf =
-            (* try assoceq prf (!execache) with Failure _ -> *)
+            try assoceq prf (!execache) with Failure _ ->
             (match prf with
                Start m -> el m initpols
              | Add(p1,p2) ->
@@ -511,8 +509,13 @@ let RING_AND_IDEAL_CONV =
           let km = map (fun x -> 0) vars in
           let execache = ref [] in
           let memoize prf x = (execache := (prf,x)::(!execache)); x in
+          (* Copied due to current lack of let polymorphism *)
+          let rec assoceq a l =
+            match l with
+              [] -> failwith "assoceq"
+            | (x,y)::t -> if x = a then y else assoceq a t in
           let rec run_scaled_proof vars prf =
-            (* try assoceq prf (!execache) with Failure _ -> *)
+            try assoceq prf (!execache) with Failure _ ->
             (match prf with
                Start m -> (num_1,el m initpols)
              | Add(p1,p2) ->
