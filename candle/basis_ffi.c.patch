@@ -1,8 +1,8 @@
 --- basis_ffi.c
 +++ basis_ffi.c
-@@ -294,6 +294,13 @@
+@@ -294,8 +294,34 @@
  }
-
+ 
  void fficustom (unsigned char *c, long clen, unsigned char *a, long alen) {
 -  assert(0 <= alen);
 -  assert(0 <= clen);
@@ -12,9 +12,28 @@
 +  } else if (strcmp(c, "getcwd") == 0) {
 +    assert(1 <= alen);
 +    a[0] = getcwd(a + 1, alen - 1) == NULL;
-+  } else {
++  } else if (strcmp(c, "system") == 0) {
++    assert(2 <= alen);
++    assert(memchr(a, 0, alen) != NULL);
++    int ret = system((const char *)a);
++
++    // return convention:
++    // 0 < a[0] ==> no termination status for child
++    // a[0] = 0 ==> a[1] = termination status of child
++    if (ret == -1) {
++      a[0] = 1;
++      return;
++    }
++    if (!(WIFEXITED(ret))) {
++      a[0] = 2;
++      return;
++    }
++    a[0] = 0;
++    a[1] = WEXITSTATUS(ret);
 +    return;
++  } else {
++    return;  // Ignore unknown command
 +  }
  }
-
+ 
  // ---------------------------------------------------------------------------
