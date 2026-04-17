@@ -75,6 +75,7 @@ TESTS = [
     "100/lhopital",
     "100/stirling",
     "100/liouville",
+    "100/cayley_hamilton",
 ]
 
 
