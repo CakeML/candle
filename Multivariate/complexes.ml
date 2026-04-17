@@ -685,7 +685,7 @@ let COMPLEX_POLY_NEG_CONV,COMPLEX_POLY_ADD_CONV,COMPLEX_POLY_SUB_CONV,
   SEMIRING_NORMALIZERS_CONV COMPLEX_POLY_CLAUSES COMPLEX_POLY_NEG_CLAUSES
    (is_complex_const,
     COMPLEX_RAT_ADD_CONV,COMPLEX_RAT_MUL_CONV,COMPLEX_RAT_POW_CONV)
-   (<);;
+   Term.(<);;
 
 (* ------------------------------------------------------------------------- *)
 (* Extend it to handle "inv" and division, by constants after normalization. *)
@@ -874,7 +874,7 @@ let COMPLEX_FIELD =
               not(is_ratconst(rand tm)) in
   let BASIC_COMPLEX_FIELD tm =
     let is_freeinv t = is_inv t && free_in t tm in
-    let itms = setify(map rand (find_terms is_freeinv tm)) in
+    let itms = setify Term.(<=) (map rand (find_terms is_freeinv tm)) in
     let hyps = map
      (fun t -> CONV_RULE easy_nz_conv (SPEC t COMPLEX_MUL_RINV)) itms in
     let tm' = itlist (fun th t -> mk_imp(concl th,t)) hyps tm in
