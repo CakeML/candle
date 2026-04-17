@@ -101,6 +101,10 @@ let tms = Array.make n_tm xvar;;
 let ths = Array.make n_th xrefl;;
 let cis = Array.make n_ci (Array.make 0 xrefl);;
 
+let cmd_cnt = ref 1;;
+let incr_cnt () = cmd_cnt := !cmd_cnt + 1;;
+let print_cnt () = print ("At command " ^ string_of_int !cmd_cnt ^ "\n");;
+
 let pft_tyvar () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
@@ -410,6 +414,32 @@ let pft_inst_type () =
   dprintln ("  writing ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm result);
   Array.set ths id result;;
 
+let pft_expect () =
+  dprintln "EXPECT";
+  let id = decode_uleb128 command_stream in
+  let th = Array.get ths id in
+  dprintln ("  read ths[" ^ string_of_int id ^ "]:\n    " ^ string_of_thm th);
+  let actual_hyps = hyp th in
+  let actual_concl = concl th in
+  let n_hyps = decode_uleb128 command_stream in
+  let rec loop i hyps =
+    if i <= 0 then rev hyps else
+      let hyp_id = decode_uleb128 command_stream in
+      let tm = Array.get tms hyp_id in
+      dprintln ("  read tms[" ^ string_of_int hyp_id ^ "]:\n    " ^
+                  string_of_term tm);
+      loop (i - 1) (tm::hyps) in
+  let expected_hyps = loop n_hyps [] in
+  let subset_aconv l1 l2 = forall (fun t1 -> exists (aconv t1) l2) l1 in
+  let set_eq_aconv l1 l2 = subset_aconv l1 l2 && subset_aconv l2 l1 in
+  if not (set_eq_aconv expected_hyps actual_hyps) then failwith "mismatched hypotheses!";
+  let concl_id = decode_uleb128 command_stream in
+  let expected_concl = Array.get tms concl_id in
+  dprintln ("  read tms[" ^ string_of_int concl_id ^ "]:\n    " ^
+              string_of_term expected_concl);
+  if not (aconv expected_concl actual_concl) then failwith "mismatched conclusion!";
+  ();;
+
 let rec command_loop () =
   match next_command command_stream with
   | None -> ()
@@ -447,6 +477,7 @@ let rec command_loop () =
         can ignore deletion requests. *)
      else if 0xE0 <= cmd && cmd <= 0xE3 then (
        decode_uleb128 command_stream; ())
+     else if cmd = 0xEF then pft_expect ()
      else if 0xF0 <= cmd && cmd <= 0xF3 then (
        decode_uleb128 command_stream;
        decode_uleb128 command_stream; ())
@@ -459,15 +490,16 @@ let rec command_loop () =
        Text_io.input1 command_stream;
        Text_io.input1 command_stream; ())
      else failwith ("command_loop: unsupported command: " ^ string_of_int cmd);
-     command_loop ();;
+     incr_cnt (); command_loop ();;
 
 let _ = expect_pft command_stream;;
 let _ = expect_version command_stream 1;;
-
 let ruleset = decode_string command_stream;;
 let _ =
   if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset);;
+let _ = incr_cnt ();;
 
 let _ = command_loop ();;
+let _ = print_cnt ();;
 
 let _ = Text_io.closeIn command_stream;;
