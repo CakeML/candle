@@ -1,3 +1,5 @@
+needs "candle/pft/pft.ml";;
+
 let here = "candle/pft/";;
 let extract_footer_path = here ^ "extract_footer";;
 
@@ -100,7 +102,10 @@ let cis = Array.make n_ci ([]: thm list);;
 
 let cmd_cnt = ref 1;;
 let incr_cnt () = cmd_cnt := !cmd_cnt + 1;;
-let print_cnt () = print (string_of_int (!cmd_cnt));;
+let print_cnt () = print (string_of_int (!cmd_cnt) ^ "\n");;
+
+let cleanup () =
+  print_cnt (); Text_io.closeIn command_stream;;
 
 let pft_tyvar () =
   let id = decode_uleb128 command_stream in
@@ -374,7 +379,7 @@ let pft_expect () =
 
 let rec command_loop () =
   match next_command command_stream with
-  | None -> print "Success!"; ()
+  | None -> ()
   | Some cmd_char ->
      let cmd = Char.code cmd_char in
      if cmd = 0x01 then pft_tyvar ()
@@ -430,7 +435,6 @@ let _ =
   if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset);;
 let _ = incr_cnt ();;
 
-let _ = command_loop ();;
-let _ = print_cnt ();;
-
-let _ = Text_io.closeIn command_stream;;
+let _ =
+  (try command_loop () with e -> (cleanup (); raise e));
+  cleanup (); print "Success!\n";;
