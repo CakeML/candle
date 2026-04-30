@@ -85,33 +85,37 @@ let next_command fd = Text_io.input1 fd;;
 
 (* --- Replay files --- *)
 
-let trace_path = here ^ "merged.candle.pft.bin";;
-let command_stream = Text_io.openIn trace_path;;
-let _ = print_types_of_subterms := 2;;
+let replay trace_name =
 
-let (n_ty, n_tm, n_th, n_ci) = process_footer trace_path;;
+let trace_path = here ^ trace_name in
+
+let _ = print ("Processing " ^ trace_path ^ "\n") in
+let command_stream = Text_io.openIn trace_path in
+let _ = print_types_of_subterms := 2 in
+
+let (n_ty, n_tm, n_th, n_ci) = process_footer trace_path in
 
 (* Initial values for the arrays *)
-let xvar = mk_var ("x", aty);;
-let xrefl = REFL xvar;;
+let xvar = mk_var ("x", aty) in
+let xrefl = REFL xvar in
 
-let tys = Array.make n_ty aty;;
-let tms = Array.make n_tm xvar;;
-let ths = Array.make n_th xrefl;;
-let cis = Array.make n_ci ([]: thm list);;
+let tys = Array.make n_ty aty in
+let tms = Array.make n_tm xvar in
+let ths = Array.make n_th xrefl in
+let cis = Array.make n_ci ([]: thm list) in
 
-let cmd_cnt = ref 1;;
-let incr_cnt () = cmd_cnt := !cmd_cnt + 1;;
-let print_cnt () = print (string_of_int (!cmd_cnt) ^ "\n");;
+let cmd_cnt = ref 1 in
+let incr_cnt () = cmd_cnt := !cmd_cnt + 1 in
+let print_cnt () = print (string_of_int (!cmd_cnt) ^ "\n") in
 
 let cleanup () =
-  print_cnt (); Text_io.closeIn command_stream;;
+  print_cnt (); Text_io.closeIn command_stream in
 
 let pft_tyvar () =
   let id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let result = Kernel.mk_vartype name in
-  Array.set tys id result;;
+  Array.set tys id result in
 
 let pft_tyop () =
   let id = decode_uleb128 command_stream in
@@ -124,7 +128,7 @@ let pft_tyop () =
       loop (i - 1) (ty::args) in
   let args = loop n_args [] in
   let result = Kernel.mk_type (name, args) in
-  Array.set tys id result;;
+  Array.set tys id result in
 
 let pft_const () =
   let id = decode_uleb128 command_stream in
@@ -132,7 +136,7 @@ let pft_const () =
   let type_id = decode_uleb128 command_stream in
   let ty = Array.get tys type_id in
   let result = mk_mconst (name, ty) in
-  Array.set tms id result;;
+  Array.set tms id result in
 
 let pft_var () =
   let id = decode_uleb128 command_stream in
@@ -140,7 +144,7 @@ let pft_var () =
   let type_id = decode_uleb128 command_stream in
   let ty = Array.get tys type_id in
   let result = Kernel.mk_var (name, ty) in
-  Array.set tms id result;;
+  Array.set tms id result in
 
 let pft_abs () =
   let id = decode_uleb128 command_stream in
@@ -149,7 +153,7 @@ let pft_abs () =
   let var_tm = Array.get tms var_id in
   let body_tm = Array.get tms body_id in
   let result = Kernel.mk_abs (var_tm, body_tm) in
-  Array.set tms id result;;
+  Array.set tms id result in
 
 let pft_comb () =
   let id = decode_uleb128 command_stream in
@@ -158,14 +162,14 @@ let pft_comb () =
   let rator_tm = Array.get tms rator_id in
   let rand_tm = Array.get tms rand_id in
   let result = mk_comb (rator_tm, rand_tm) in
-  Array.set tms id result;;
+  Array.set tms id result in
 
 let pft_assume () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
   let tm = Array.get tms tm_id in
   let result = Kernel.ASSUME tm in
-  Array.set ths id result
+  Array.set ths id result in
 
 let pft_new_specification () =
   let id = decode_uleb128 command_stream in
@@ -178,7 +182,7 @@ let pft_new_specification () =
   let names = loop n_names [] in
   let th = Array.get ths th_id in
   let result = Kernel.new_specification th in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_new_type_definition () =
   let id = decode_uleb128 command_stream in
@@ -190,7 +194,7 @@ let pft_new_type_definition () =
   let absth, repth =
     Kernel.new_basic_type_definition (tyname, (absname, (repname, th))) in
   Array.set ths id absth;
-  Array.set ths (id + 1) repth;;
+  Array.set ths (id + 1) repth in
 
 let pft_compute_init () =
   let id = decode_uleb128 command_stream in
@@ -201,7 +205,7 @@ let pft_compute_init () =
       let eq = Array.get ths eq_id in
       loop (i - 1) (eq::eqs) in
   let eqs = loop n_eqs [] in
-  Array.set cis id eqs;;
+  Array.set cis id eqs in
 
 let pft_compute () =
   let id = decode_uleb128 command_stream in
@@ -217,26 +221,26 @@ let pft_compute () =
   let code_eqs = loop n_ths [] in
   let tm = Array.get tms tm_id in
   let th = Kernel.compute (eqs, code_eqs) tm in
-  Array.set ths id th;;
+  Array.set ths id th in
 
 let pft_save () =
   let name = decode_string command_stream in
   let th_id = decode_uleb128 command_stream in
   let th = Array.get ths th_id in
-  save_th name th;;
+  save_th name th in
 
 let pft_load () =
   let th_id = decode_uleb128 command_stream in
   let name = decode_string command_stream in
   let th = load_th name in
-  Array.set ths th_id th;;
+  Array.set ths th_id th in
 
 let pft_sym () =
   let id = decode_uleb128 command_stream in
   let th_id = decode_uleb128 command_stream in
   let th = Array.get ths th_id in
   let result = SYM th in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_prove_hyp () =
   let id = decode_uleb128 command_stream in
@@ -245,14 +249,14 @@ let pft_prove_hyp () =
   let th1 = Array.get ths th1_id in
   let th2 = Array.get ths th2_id in
   let result = PROVE_HYP th1 th2 in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_refl () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
   let tm = Array.get tms tm_id in
   let result = REFL tm in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_trans () =
   let id = decode_uleb128 command_stream in
@@ -261,7 +265,7 @@ let pft_trans () =
   let th1 = Array.get ths th1_id in
   let th2 = Array.get ths th2_id in
   let result = Kernel.TRANS th1 th2 in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_mk_comb_thm () =
   let id = decode_uleb128 command_stream in
@@ -270,7 +274,7 @@ let pft_mk_comb_thm () =
   let th1 = Array.get ths th1_id in
   let th2 = Array.get ths th2_id in
   let result = MK_COMB (th1, th2) in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_abs_thm () =
   let id = decode_uleb128 command_stream in
@@ -279,18 +283,18 @@ let pft_abs_thm () =
   let tm = Array.get tms tm_id in
   let th = Array.get ths th_id in
   let result = ABS tm th in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_new_const () =
   let name = decode_string command_stream in
   let ty_id = decode_uleb128 command_stream in
   let ty = Array.get tys ty_id in
-  Kernel.new_constant (name, ty);;
+  Kernel.new_constant (name, ty) in
 
 let pft_new_type () =
   let name = decode_string command_stream in
   let arity = decode_uleb128 command_stream in
-  Kernel.new_type (name, arity);;
+  Kernel.new_type (name, arity) in
 
 let pft_axiom () =
   let id = decode_uleb128 command_stream in
@@ -298,14 +302,14 @@ let pft_axiom () =
   let name = decode_string command_stream in
   let tm = Array.get tms tm_id in
   let result = Kernel.new_axiom tm in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_beta () =
   let id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
   let tm = Array.get tms tm_id in
   let result = Kernel.BETA tm in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_eq_mp () =
   let id = decode_uleb128 command_stream in
@@ -314,7 +318,7 @@ let pft_eq_mp () =
   let eq = Array.get ths eq_id in
   let th = Array.get ths th_id in
   let result = EQ_MP eq th in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_deduct_antisym_rule () =
   let id = decode_uleb128 command_stream in
@@ -323,7 +327,7 @@ let pft_deduct_antisym_rule () =
   let th1 = Array.get ths th1_id in
   let th2 = Array.get ths th2_id in
   let result = DEDUCT_ANTISYM_RULE th1 th2 in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_inst () =
   let id = decode_uleb128 command_stream in
@@ -339,7 +343,7 @@ let pft_inst () =
   let pairs = loop n_pairs [] in
   let th = Array.get ths th_id in
   let result = Kernel.INST pairs th in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_inst_type () =
   let id = decode_uleb128 command_stream in
@@ -355,7 +359,7 @@ let pft_inst_type () =
   let pairs = loop n_pairs [] in
   let th = Array.get ths th_id in
   let result = Kernel.INST_TYPE pairs th in
-  Array.set ths id result;;
+  Array.set ths id result in
 
 let pft_expect () =
   let id = decode_uleb128 command_stream in
@@ -375,7 +379,7 @@ let pft_expect () =
   let concl_id = decode_uleb128 command_stream in
   let expected_concl = Array.get tms concl_id in
   if not (aconv expected_concl actual_concl) then failwith "mismatched conclusion!";
-  ();;
+  () in
 
 let rec command_loop () =
   match next_command command_stream with
@@ -426,15 +430,18 @@ let rec command_loop () =
        Text_io.input1 command_stream; ())
      else failwith ("command_loop: unsupported command: " ^ string_of_int cmd);
      incr_cnt ();
-     command_loop ();;
+     command_loop () in
 
-let _ = expect_pft command_stream;;
-let _ = expect_version command_stream 1;;
-let ruleset = decode_string command_stream;;
+let _ = expect_pft command_stream in
+let _ = expect_version command_stream 1 in
+let ruleset = decode_string command_stream in
 let _ =
-  if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset);;
-let _ = incr_cnt ();;
+  if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset) in
+let _ = incr_cnt () in
 
-let _ =
-  (try command_loop () with e -> (cleanup (); raise e));
-  cleanup (); print "Success!\n";;
+(try command_loop () with e -> (cleanup (); raise e));
+cleanup (); print "Success!\n";;
+
+let replay_all paths = List.iter replay paths;;
+
+let _ = replay_all ["merged.candle.pft.bin"];;
