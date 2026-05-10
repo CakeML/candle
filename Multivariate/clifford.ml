@@ -761,7 +761,7 @@ let SETENUM_NORM_CONV =
     GEN_REWRITE_CONV I [FORALL_SIMP] in
   fun tm ->
     let nums = dest_setenum tm in
-    let nums' = map mk_numeral (sort (</) (map dest_numeral (setify nums))) in
+    let nums' = map mk_numeral (sort (</) (map dest_numeral (setify Term.(<) nums))) in
     if nums' = nums then REFL tm else
     let eq = mk_eq(tm,mk_setenum(nums',fst(dest_fun_ty(type_of tm)))) in
     EQT_ELIM(conv eq);;
@@ -829,7 +829,7 @@ let MBASIS_GROUP_CONV tm =
   let vadd_tm = rator(rator tm) in
   let mk_vadd = mk_binop vadd_tm in
   let mbs = map (snd o dest_binary "%") tms in
-  let tmbs = zip mbs tms and mset = setify mbs in
+  let tmbs = zip mbs tms and mset = setify Term.(<) mbs in
   let grps = map (fun x -> map snd (filter (fun (x',_) -> x' = x) tmbs))
                  mset in
   let tm' = end_itlist mk_vadd (map (end_itlist mk_vadd) grps) in
