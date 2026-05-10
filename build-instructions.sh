@@ -12,7 +12,8 @@ tar xvzf cake-x64-64.tar.gz --strip-components=1
 
 # By default, the CakeML compiler reserves a few kilobytes for constants and
 # code produced by the dynamic compiler. Using Candle requires setting these
-# to some megabytes:
+# to some megabytes (or hundreds of megabytes for some of the more heavier
+# files in HOL Light, such as make_complex.ml).
 patch cake.S ../cake.S.patch
 
 # Patching in useful FFI calls
