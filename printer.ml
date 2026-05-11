@@ -456,7 +456,7 @@ let pp_print_term,pp_print_colored_term =
         let s_den = implode(tl(explode(string_of_num
                         (n_den +/ (mod_num n_num n_den))))) in
         pp_print_string fmt
-         ("#"^s_num^(if n_den = num 1 then "" else ".")^s_den)
+         ("#"^s_num^(if n_den =/ num 1 then "" else ".")^s_den)
       with Failure _ -> try
         if s <> "_MATCH" || length args <> 2 then failwith "" else
         let cls = dest_clauses(hd(tl args)) in
