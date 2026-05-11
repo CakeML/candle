@@ -208,7 +208,7 @@ let pp_print_bitpat,pp_print_colored_bitpat,
     let f fmt =
       let unword i = function
       | Comb(Const("word",_),a) when is_numeral a ->
-        if dest_numeral a < power_num (num 2) (dest_finty i)
+        if dest_numeral a </ power_num (num 2) (dest_finty i)
         then a
         else failwith "numeral out of range"
       | a -> a in
@@ -374,7 +374,7 @@ let PAT_EXTRACT_THM =
     let aty = type_of a' in
     let Tyapp(_,[N']) = aty in
     let n'' = dest_finty N' in
-    if i'' < n'' then
+    if i'' </ n'' then
       match a' with
       | Comb(Const("word1",_),b') -> INST [p',p; b',b] word1_eq
       | Comb(Const("word",_),m') when is_numeral m' ->
@@ -790,13 +790,13 @@ let rec bitpat_matches p i = match p with
   let m = power_num (num 2) (num n) in
   let i' = quo_num i m and a' = mod_num i m in
   let r = match a with
-  | Comb(Const("word1",_),Const("T",_)) -> if a' = num 1 then None else Some 0
-  | Comb(Const("word1",_),Const("F",_)) -> if a' = num 0 then None else Some 0
+  | Comb(Const("word1",_),Const("T",_)) -> if a' =/ num 1 then None else Some 0
+  | Comb(Const("word1",_),Const("F",_)) -> if a' =/ num 0 then None else Some 0
   | Comb(Const("word1",_),Var(_,_)) -> None
   | Comb(Const("word",_),n) ->
     let n' = dest_numeral n in
-    if a' = n' then None else
-    let rec f i r = if i land 1 != 0 then r else f (i lsr 1) (r+1) in
+    if a' =/ n' then None else
+    let rec f i r = if i land 1 <> 0 then r else f (i lsr 1) (r+1) in
     Some (f ((Num.int_of_num a') lxor (Num.int_of_num n')) 0)
   | Var(_,_) -> None
   | _ -> failwith "bitpat_matches" in
@@ -806,7 +806,7 @@ let rec bitpat_matches p i = match p with
     match bitpat_matches p i' with
     | Some j -> Some (j + n)
     | None -> None)
-| Const("NILPAT",_) -> if i = num 0 then None else
+| Const("NILPAT",_) -> if i =/ num 0 then None else
   failwith "bitpat_matches: out of range"
 | Abs(_,c) -> bitpat_matches c i
 | Comb(Const("?",_),c) -> bitpat_matches c i
@@ -875,11 +875,11 @@ let inst_bitpat_numeral =
       let ls, b = match a with
       | Const("T",_) -> ls,true
       | Const("F",_) -> ls,false
-      | Var(_,_) -> let b = a' = num 1 in ((if b then T else F),a)::ls, b
+      | Var(_,_) -> let b = a' =/ num 1 in ((if b then T else F),a)::ls, b
       | _ -> failwith "inst_bitpat_numeral" in
       ls, PROVE_HYP th' (
         if b then INST [x,ex; p',ep] w1T
-        else if i = num 0 then INST [p',ep] w1F0
+        else if i =/ num 0 then INST [p',ep] w1F0
         else INST [x,ex; p',ep] w1F)
     | _ ->
       let thd = dim N in

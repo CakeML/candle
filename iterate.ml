@@ -1960,7 +1960,7 @@ let EXPAND_NSUM_CONV =
       let th1 = INST [ftm,f_tm; mtm,m_tm; ntm,n_tm] pth_0 in
       MP th1 (EQT_ELIM(NUM_LT_CONV(lhand(concl th1))))
     else if n =/ m then CONV_RULE (RAND_CONV(TRY_CONV BETA_CONV))
-                                  (INST [ftm,f_tm; mtm,m_tm] pth_1)
+                                 (INST [ftm,f_tm; mtm,m_tm] pth_1)
     else
       let th1 = INST [ftm,f_tm; mtm,m_tm; ntm,n_tm] pth_2 in
       let th2 = MP th1 (EQT_ELIM(NUM_LE_CONV(lhand(concl th1)))) in
@@ -2808,7 +2808,7 @@ let EXPAND_SUM_CONV =
       let th1 = INST [ftm,f_tm; mtm,m_tm; ntm,n_tm] pth_0 in
       MP th1 (EQT_ELIM(NUM_LT_CONV(lhand(concl th1))))
     else if n =/ m then CONV_RULE (RAND_CONV(TRY_CONV BETA_CONV))
-                                  (INST [ftm,f_tm; mtm,m_tm] pth_1)
+                                 (INST [ftm,f_tm; mtm,m_tm] pth_1)
     else
       let th1 = INST [ftm,f_tm; mtm,m_tm; ntm,n_tm] pth_2 in
       let th2 = MP th1 (EQT_ELIM(NUM_LE_CONV(lhand(concl th1)))) in

@@ -56,7 +56,7 @@ let term_of_rat =
   fun x ->
     let p,q = numdom x in
     let ptm = mk_realintconst p in
-    if q = num_1 then ptm
+    if q =/ num_1 then ptm
     else mk_comb(mk_comb(div_tm,ptm),mk_realintconst q);;
 
 (* ------------------------------------------------------------------------- *)

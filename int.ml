@@ -264,7 +264,7 @@ let is_intconst tm =
   match tm with
     Comb(Const("int_of_num",_),n) -> is_numeral n
   | Comb(Const("int_neg",_),Comb(Const("int_of_num",_),n)) ->
-      is_numeral n && not(dest_numeral n = num_0)
+      is_numeral n && not(dest_numeral n =/ num_0)
   | _ -> false;;
 
 let dest_intconst tm =

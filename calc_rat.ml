@@ -319,7 +319,7 @@ let REAL_RAT_MUL_CONV =
     and x2n = dest_realintconst x2' and y2n = dest_realintconst y2' in
     let d1n = gcd_num x1n y2n
     and d2n = gcd_num x2n y1n in
-    if d1n = num_1 && d2n = num_1 then
+    if d1n =/ num_1 && d2n =/ num_1 then
       let th0 = INST [x1',x1; y1',y1; x2',x2; y2',y2] pth_nocancel in
       let th1 = BINOP_CONV REAL_INT_MUL_CONV (rand(concl th0)) in
       TRANS th0 th1
