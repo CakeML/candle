@@ -4326,7 +4326,7 @@ let REAL_CONTINUOUS_ON_ACS = prove
 (* Differentiation conversion.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-let real_differentiation_theorems = ref [];;
+let real_differentiation_theorems = ref ([]: thm list);;
 
 let add_real_differentiation_theorems =
   let ETA_THM = prove

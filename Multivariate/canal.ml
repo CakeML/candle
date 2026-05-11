@@ -2391,7 +2391,7 @@ let HOLOMORPHIC_CONSTANT_IM = prove
 (* Differentiation conversion.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-let complex_differentiation_theorems = ref [];;
+let complex_differentiation_theorems = ref ([]: thm list);;
 
 let add_complex_differentiation_theorems =
   let ETA_THM = prove
