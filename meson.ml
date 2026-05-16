@@ -82,7 +82,7 @@ module Meson = struct
 
   let qpartition p m =
     let rec qpartition l =
-      (* if l == m then raise Unchanged else *)
+      if l == m then raise Unchanged else
       match l with
         [] -> raise Unchanged
       | (h::t) -> if p h then
@@ -204,12 +204,12 @@ module Meson = struct
     match tm with
       Fvar v -> rev_assocd v theta tm
     | Fnapp(f,args) ->
-          let args' = map (fol_subst theta) args in
-          (* if args' == args then tm else *) Fnapp(f,args')
+          let args' = qmap (fol_subst theta) args in
+          if args' == args then tm else Fnapp(f,args')
 
   let fol_inst theta ((p,args) as at:fol_atom) =
-    let args' = map (fol_subst theta) args in
-    (* if args' == args then at else *) p,args'
+    let args' = qmap (fol_subst theta) args in
+    if args' == args then at else p,args'
 
   let rec fol_subst_bump offset theta tm =
     match tm with
@@ -219,12 +219,12 @@ module Meson = struct
                else
                  rev_assocd v theta tm
     | Fnapp(f,args) ->
-          let args' = map (fol_subst_bump offset theta) args in
-          (* if args' == args then tm else *) Fnapp(f,args')
+          let args' = qmap (fol_subst_bump offset theta) args in
+          if args' == args then tm else Fnapp(f,args')
 
   let fol_inst_bump offset theta ((p,args) as at:fol_atom) =
-    let args' = map (fol_subst_bump offset theta) args in
-    (* if args' == args then at else *) p,args'
+    let args' = qmap (fol_subst_bump offset theta) args in
+    if args' == args then at else p,args'
 
   (* ----------------------------------------------------------------------- *)
   (* Main unification function, maintaining a "graph" instantiation.         *)
@@ -264,7 +264,7 @@ module Meson = struct
   (* ----------------------------------------------------------------------- *)
 
   let rec fol_eq insts tm1 tm2 =
-    (* tm1 == tm2 || *)
+    tm1 == tm2 ||
     match tm1,tm2 with
       Fnapp(f,fargs),Fnapp(g,gargs) ->
           f = g && forall2 (fol_eq insts) fargs gargs
@@ -735,7 +735,7 @@ module Meson = struct
         match l with
           x::(y::_ as t) -> let t' = uniq' eq t in
                               if eq x y then t' else
-                              (* if t'==t then l else *) x::t'
+                              if t'==t then l else x::t'
         | _ -> l in
     let setify' le eq s = uniq' eq (sort le s) in
     let rec grab_constants tm acc =

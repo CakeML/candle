@@ -274,11 +274,9 @@ let NUM_SUC_CONV,NUM_ADD_CONV,NUM_MULT_CONV,NUM_EXP_CONV,
     | Comb(Const("BIT0",_),t)|Comb(Const("BIT1",_),t) -> wellformed t
     | _ -> false in
   let rec orderrelation mtm ntm =
-(*
     if mtm == ntm then
       if wellformed mtm then 0 else failwith "orderrelation"
     else
-*)
       match (mtm,ntm) with
         Const("_0",_),Const("_0",_) -> 0
       | Const("_0",_),_ ->

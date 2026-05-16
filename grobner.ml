@@ -491,7 +491,7 @@ let RING_AND_IDEAL_CONV =
           let rec assoceq a l =
             match l with
               [] -> failwith "assoceq"
-            | (x,y)::t -> if x = a then y else assoceq a t in
+            | (x,y)::t -> if x == a then y else assoceq a t in
           let rec run_proof vars prf =
             try assoceq prf (!execache) with Failure _ ->
             (match prf with
@@ -513,7 +513,7 @@ let RING_AND_IDEAL_CONV =
           let rec assoceq a l =
             match l with
               [] -> failwith "assoceq"
-            | (x,y)::t -> if x = a then y else assoceq a t in
+            | (x,y)::t -> if x == a then y else assoceq a t in
           let rec run_scaled_proof vars prf =
             try assoceq prf (!execache) with Failure _ ->
             (match prf with

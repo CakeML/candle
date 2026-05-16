@@ -55,7 +55,7 @@ let null = function
     [] -> true
   | _  -> false
 let tabulate (n,f) =
-  let rec go i = if i = n then [] else f i :: go (i+1)
+  let rec go i = if i == n then [] else f i :: go (i+1)
   in  go 0
 let find p l = try Some (List.find p l) with Not_found -> None;;
 let rec first f = function
@@ -749,7 +749,7 @@ let rec treeUnion compareKey f f2 tree1 tree2 =
       | Tree node2 -> nodeUnion compareKey f f2 node1 node2
 
 and nodeUnion compareKey f f2 node1 node2 =
-    (* if node1 == node2 then nodeMapPartial f2 node1 else *)
+    if node1 == node2 then nodeMapPartial f2 node1 else
         let Node {priority;left;key;value;right} = node2
 
         in let (l,kvo,r) = nodePartition compareKey key node1
@@ -811,7 +811,7 @@ let rec treeUnionDomain compareKey tree1 tree2 =
       match tree2 with
         Empty -> tree1
       | Tree node2 ->
-        (* if node1 == node2 then tree2 else *)
+        if node1 == node2 then tree2 else
         nodeUnionDomain compareKey node1 node2
 
 and nodeUnionDomain compareKey node1 node2 =
@@ -838,7 +838,7 @@ let rec treeIntersectDomain compareKey tree1 tree2 =
       match tree2 with
         Empty -> Empty
       | Tree node2 ->
-        (* if node1 == node2 then tree2 else *)
+        if node1 == node2 then tree2 else
         nodeIntersectDomain compareKey node1 node2
 
 and nodeIntersectDomain compareKey node1 node2 =
@@ -866,7 +866,7 @@ let rec treeDifferenceDomain compareKey t1 t2 =
       | Tree n2 -> nodeDifferenceDomain compareKey n1 n2
 
 and nodeDifferenceDomain compareKey n1 n2 =
-    (* if n1 == n2 then Empty else *)
+    if n1 == n2 then Empty else
         let Node {priority;left;key;value;right} = n1
 
         in let (l,kvo,r) = nodePartition compareKey key n2
@@ -891,7 +891,7 @@ let rec treeSubsetDomain compareKey tree1 tree2 =
       | Tree node2 -> nodeSubsetDomain compareKey node1 node2
 
 and nodeSubsetDomain compareKey node1 node2 =
-    (* node1 == node2 || *)
+    node1 == node2 ||
       let Node {size;left;key;right} = node1
     in
       size <= nodeSize node2 &&
@@ -1392,7 +1392,7 @@ let count pred =
 (* ------------------------------------------------------------------------- *)
 
 let compare compareValue m1 m2 =
-    (* if m1 == m2 then 0 else *)
+    if m1 == m2 then 0 else
       let c = Useful.intCompare (size m1) (size m2) in
       if c <> 0 then c
       else
@@ -1405,7 +1405,7 @@ let compare compareValue m1 m2 =
     ;;
 
 let equal equalValue m1 m2 =
-    (* m1 == m2 || *)
+    m1 == m2 ||
     (size m1 = size m2 &&
        let Map (compareKey,_) = m1
 
@@ -2290,7 +2290,7 @@ let compare tm1 tm2 =
   let rec cmp = function
       ([], []) -> 0
     | (tm1 :: tms1, tm2 :: tms2) ->
-        (* if tm1 == tm2 then cmp (tms1, tms2) else *)
+        if tm1 == tm2 then cmp (tms1, tms2) else
           (match (tm1,tm2) with
             (Tvar v1, Tvar v2) ->
               let c = Name.compare v1 v2 in
@@ -2345,7 +2345,7 @@ let rec replace tm = function
         let arg = List.nth tms h in
         let arg' = replace arg (t,res)
         in
-          (* if arg' == arg then tm else *)
+          if arg' == arg then tm else
           Fn (letc, Mlist.updateNth (h,arg') tms)
 ;;
 
@@ -2618,12 +2618,12 @@ let subst sub =
   let rec tmSub = function
         (Term.Tvar v as tm) ->
           (match peek sub v with
-             Some tm' -> (* if tm == tm' then tm else *) tm'
+             Some tm' -> if tm == tm' then tm else tm'
            | None -> tm)
       | (Term.Fn (f,args) as tm) ->
           let args' = List.map tmSub args
           in
-            (* if args == args' then tm else *)
+            if args == args' then tm else
             Term.Fn (f,args')
     in
       fun tm -> if null sub then tm else tmSub tm
@@ -2762,7 +2762,7 @@ let unify sub tm1 tm2 =
   let rec solve sub = function
       [] -> sub
     | ((tm1,tm2) :: rest) ->
-      (* if tm1 == tm2 then solve sub rest else *)
+      if tm1 == tm2 then solve sub rest else
       solve' sub (subst sub tm1, subst sub tm2, rest)
 
   and solve' sub = function
@@ -2876,7 +2876,7 @@ let replace ((rel,tms) as atm) = function
       let tm = List.nth tms h
       in let tm' = Term.replace tm (t,res)
       in
-        (* if tm == tm' then atm else *)
+        if tm == tm' then atm else
         (rel, Mlist.updateNth (h,tm') tms)
       ;;
 
@@ -2908,7 +2908,7 @@ let freeVars =
 let subst sub ((p,tms) as atm) : atom =
     let tms' = List.map (Substitute.subst sub) tms
     in
-      (* if tms' == tms then atm else *) (p,tms')
+      if tms' == tms then atm else (p,tms')
     ;;
 
 (* ------------------------------------------------------------------------- *)
@@ -3334,7 +3334,7 @@ let compare fm1 fm2 =
   let rec cmp = function
       [] -> 0
     | (((f1, f2) as f1_f2) :: fs) ->
-      (* if f1 == f2 then cmp fs else *)
+      if f1 == f2 then cmp fs else
         match f1_f2 with
           (Ftrue,Ftrue) -> cmp fs
         | (Ftrue,_) -> -1
@@ -3435,11 +3435,11 @@ let generalize fm = listMkForall (Name.Set.toList (freeVars fm), fm);;
       | Atom (p,tms) ->
           let tms' = List.map (Substitute.subst sub) tms
         in
-          (* if tms == tms' then fm else *) Atom (p,tms')
+          if tms == tms' then fm else Atom (p,tms')
       | Not p ->
           let p' = substFm sub p
         in
-          (* if p == p' then fm else *) Not p'
+          if p == p' then fm else Not p'
       | And (p,q) -> substConn sub fm (fun (x,y) -> And (x,y)) p q
       | Or (p,q) -> substConn sub fm (fun (x,y) -> Or (x,y)) p q
       | Imp (p,q) -> substConn sub fm (fun (x,y) -> Imp (x,y)) p q
@@ -3451,7 +3451,7 @@ let generalize fm = listMkForall (Name.Set.toList (freeVars fm), fm);;
         let p' = substFm sub p
         and q' = substFm sub q
       in
-        (* if p == p' && q == q' then fm else *)
+        if p == p' && q == q' then fm else
         conn (p',q')
 
   and substQuant sub fm quant v p =
@@ -3474,7 +3474,7 @@ let generalize fm = listMkForall (Name.Set.toList (freeVars fm), fm);;
 
         in let p' = substCheck sub p
       in
-        (* if Name.equal v v' && p == p' then fm else *)
+        if Name.equal v v' && p == p' then fm else
         quant (v',p');;
 
   let subst = substCheck;;
@@ -3732,7 +3732,7 @@ let subterms lit = Atom.subterms (atom lit);;
 let replace ((pol,atm) as lit) path_tm =
       let atm' = Atom.replace atm path_tm
     in
-      (* if atm == atm' then lit else *) (pol,atm')
+      if atm == atm' then lit else (pol,atm')
     ;;
 
 (* ------------------------------------------------------------------------- *)
@@ -3750,7 +3750,7 @@ let freeVars lit = Atom.freeVars (atom lit);;
 let subst sub ((pol,atm) as lit) : literal =
       let atm' = Atom.subst sub atm
     in
-      (* if atm' == atm then lit else *) (pol,atm')
+      if atm' == atm then lit else (pol,atm')
     ;;
 
 (* ------------------------------------------------------------------------- *)
@@ -3932,7 +3932,6 @@ struct
         foldl f 0
       ;;
 
-(* complexity comes from unsupported pointer equality
   let subst sub lits =
         let substLit (lit,(eq,lits')) =
               let lit' = subst sub lit
@@ -3944,9 +3943,6 @@ struct
       in
         if eq then lits else lits'
       ;;
-*)
-  let subst sub lits =
-      foldl (fun (lit,lits') -> add lits' (subst sub lit)) empty lits;;
 
   let conjoin set =
       Formula.listMkConj (List.map toFormula (toList set));;
@@ -4140,7 +4136,7 @@ let assume lit =
 let subst sub (Thm (cl,inf) as th) =
       let cl' = Literal.Set.subst sub cl
     in
-      (* if cl == cl' then th else *)
+      if cl == cl' then th else
         match inf with
           (Subst,_) -> Thm (cl',inf)
         | _ -> Thm (cl',(Subst,[th]))
@@ -5112,7 +5108,7 @@ let freshVars th = Thm.subst (Substitute.freshVars (Thm.freeVars th)) th;;
         match result with
           None -> Apart
         | Some sub' ->
-          (* if sub == sub' then Joined else *) Joinable sub'
+          if sub == sub' then Joined else Joinable sub'
       ;;
 
   let updateApart sub =
@@ -6412,7 +6408,7 @@ type qterm =
   let rec cmp = function
       [] -> 0
     | (((q1, q2) as q1_q2) :: qs) ->
-      (* if q1 == q2 then cmp qs else *)
+      if q1 == q2 then cmp qs else
         match q1_q2 with
           (Qvar,Qvar) -> cmp qs (* was 0 - bug in metis? *)
         | (Qvar, Fn _) -> -1
