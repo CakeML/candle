@@ -717,7 +717,7 @@ let COMPLEX_POLY_NEG_CONV,COMPLEX_POLY_ADD_CONV,COMPLEX_POLY_SUB_CONV,
   SEMIRING_NORMALIZERS_CONV COMPLEX_POLY_CLAUSES COMPLEX_POLY_NEG_CLAUSES
    (is_complex_const,
     COMPLEX_RAT_ADD_CONV,COMPLEX_RAT_MUL_CONV,COMPLEX_RAT_POW_CONV)
-   (<);;
+   Term.(<);;
 
 let COMPLEX_RAT_INV_CONV =
   GEN_REWRITE_CONV I [GSYM CX_INV] THENC RAND_CONV REAL_RAT_INV_CONV;;
@@ -859,7 +859,7 @@ let COMPLEX_FIELD =
   let cases_rule th1 th2 = dcases (CONJ th1 th2) in
   let BASIC_COMPLEX_FIELD tm =
     let is_freeinv t = is_inv t && free_in t tm in
-    let itms = setify(map rand (find_terms is_freeinv tm)) in
+    let itms = setify Term.(<) (map rand (find_terms is_freeinv tm)) in
     let dth = if itms = [] then TRUTH
               else end_itlist cases_rule (map (C SPEC lemma_inv) itms) in
     let tm' = mk_imp(concl dth,tm) in
