@@ -992,7 +992,7 @@ let NOVEMBER_LEMMA_1 = PROVE(
    let j2 = UNDISCH_ALL (BRW1 (IMP_TRANS j1 j0)) in
    let ll4 = SPECL [`(x:real) pow (p - 1)`;`((&n):real) pow (p - 1)`;`(abs (r:real)) pow p`] REAL_LE_MUL2 in
    let ll5 = (SPECL [`x:real`;`(p:num) - 1`] REAL_POW_LE) in
-   let ll50 = UNDISCH (IMP_TRANS (REAL_ARITH `&0 < x ==> (&0) <= (x:real)`) ll5;) in
+   let ll50 = UNDISCH (IMP_TRANS (REAL_ARITH `&0 < x ==> (&0) <= (x:real)`) ll5) in
    let ll6  = ADD_ASSUMS asses ll4 in
    let ll7 = REAL_ARITH `(x:real) < y ==> x <= y` in
    let ll8 = SIMP_RULE [j2;ll50;ll7;REAL_POW_LE;REAL_ABS_POS] ll6 in
