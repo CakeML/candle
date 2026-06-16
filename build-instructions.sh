@@ -26,7 +26,7 @@ make
 ./cake --types < /dev/null > types.txt 2>&1
 
 # Generate candle_insulate.ml
-python ../insulate.py types.txt insulate.ml
+python3 ../insulate.py types.txt insulate.ml
 
 #  The working directory of the binary will be CANDLE_ROOT/candle/build,
 #  so it needs to change directory to CANDLE_ROOT after booting..
