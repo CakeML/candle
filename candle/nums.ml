@@ -14,6 +14,8 @@ module type NUM = sig
 
   val abs_num : num -> num
   val floor_num : num -> num
+  val round_num : num -> num
+  val ceiling_num : num -> num
 
   val ( +/ ) : num -> num -> num
   val ( -/ ) : num -> num -> num
@@ -216,7 +218,27 @@ let ( **/) = power_num;;
 let floor_num n =
   match n with
   | Int i -> n
-  | Rat r -> Int (Cake.Rat.numerator r / Cake.Rat.denominator r)
+  | Rat r -> Int (Cake.Int.div (Cake.Rat.numerator r) (Cake.Rat.denominator r))
+;;
+
+let round_num =
+  let zero = Cake.Rat.fromInt 0 in
+  let half = Cake.Rat.(/) (Cake.Rat.fromInt 1) (Cake.Rat.fromInt 2) in
+  fun n ->
+  match n with
+  | Int _ -> n
+  | Rat r ->
+     let i =
+       if Cake.Rat.(>=) r zero
+       then Cake.Rat.floor   (Cake.Rat.(+) r half)
+       else Cake.Rat.ceiling (Cake.Rat.(-) r half)
+     in Int i
+;;
+
+let ceiling_num n =
+  match n with
+  | Int i -> n
+  | Rat r -> Int (Cake.Rat.ceiling r)
 ;;
 
 let compare x y =
@@ -263,6 +285,8 @@ let numerator = Num.numerator;;
 let minus_num = Num.minus_num;;
 let abs_num = Num.abs_num;;
 let floor_num = Num.floor_num;;
+let round_num = Num.round_num;;
+let ceiling_num = Num.ceiling_num;;
 
 let ( +/ ) = Num.( +/);;
 let ( -/ ) = Num.( -/);;
