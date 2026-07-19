@@ -213,7 +213,9 @@ parse_as_infix("divc",(22,"left"));;
 parse_as_infix("modc",(22,"left"));;
 parse_as_infix("eqc",(12,"right"));;
 
-do_list overload_interface
+(* Use inferior overload to make sure that parsing in HOL Light files is
+   unaffected. *)
+do_list inferior_overload_interface
  ["+",`Cexp_add`;
   "-",`Cexp_sub`;
   "*",`Cexp_mul`;
