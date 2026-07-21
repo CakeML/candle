@@ -8,6 +8,7 @@ module type NUM = sig
   val num_of_int : int -> num
   val int_of_num : num -> int
   val string_of_num : num -> string
+  val float_of_num  : num -> float
 
   val denominator : num -> num
   val numerator : num -> num
@@ -129,6 +130,17 @@ let string_of_num n =
       let n = Cake.Rat.numerator r in
       let d = Cake.Rat.denominator r in
       string_of_int n ^ "/" ^ string_of_int d
+;;
+
+let float_of_num n =
+  match n with
+  | Int i -> Cake.Double.fromInt i
+  | Rat r ->
+     (* TODO This is probably a terrible way of doing it in terms of
+          precision *)
+      let n = Cake.Double.fromInt (Cake.Rat.numerator r) in
+      let d = Cake.Double.fromInt (Cake.Rat.denominator r) in
+      Cake.Double.(/) n d
 ;;
 
 let minus_num n =
@@ -280,6 +292,7 @@ end;; (* struct *)
 let num_of_int = Num.num_of_int;;
 let int_of_num = Num.int_of_num;;
 let string_of_num = Num.string_of_num;;
+let float_of_num = Num.float_of_num;;
 let denominator = Num.denominator;;
 let numerator = Num.numerator;;
 let minus_num = Num.minus_num;;

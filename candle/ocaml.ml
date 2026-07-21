@@ -2,6 +2,8 @@ exception Invalid_argument of string;;
 exception End_of_file;;
 exception Not_found;;
 
+(* TODO Maybe it would be good to preallocate a single array for all FFI calls *)
+
 let pp_exn e =
   match e with
   | Invalid_argument s ->
@@ -53,6 +55,48 @@ module Candle = struct
     else Equal
 end;;
 
+module Bytes = struct
+  let length s = Cake.Word8_array.length s
+  (* NOTE OCaml also raises Invalid_argument if  n > Sys.max_string_length;
+       additionally, OCaml returns an uninitialized sequence with
+       arbitrary bytes. *)
+  let create n =
+    if n < 0 then invalid_arg "Bytes.create: negative argument" else
+      Cake.Word8_array.array n (Cake.Word8.fromInt 0)
+  (* NOTE OCaml can raise Invalid_argument in get, set, blit_string.
+       Unsure how the CakeML handle out-of-bounds accesses. *)
+  let get s n = Cake.Word8_array.sub s n
+  let set s n c = Cake.Word8_array.update s n c
+  let blit_string src src_pos dst dst_pos len =
+    Cake.Word8_array.copyVec src src_pos len dst dst_pos
+  let to_string s = Cake.Word8_array.substring s 0 (length s)
+
+  let set_uint64_le b i v =
+  (* loop-unrolling + hard-coding the divisor gives us some instruction
+     level parallelism. Since Word8.fromInt = n2w, by n2w_mod we don't need to
+     do an explicit mod operation. *)
+    set b i       (Cake.Word8.fromInt v);
+    set b (i + 1) (Cake.Word8.fromInt (Cake.Int.div v 256));
+    set b (i + 2) (Cake.Word8.fromInt (Cake.Int.div v 65536));
+    set b (i + 3) (Cake.Word8.fromInt (Cake.Int.div v 16777216));
+    set b (i + 4) (Cake.Word8.fromInt (Cake.Int.div v 4294967296));
+    set b (i + 5) (Cake.Word8.fromInt (Cake.Int.div v 1099511627776));
+    set b (i + 6) (Cake.Word8.fromInt (Cake.Int.div v 281474976710656));
+    set b (i + 7) (Cake.Word8.fromInt (Cake.Int.div v 72057594037927936))
+  let get_int64_le b i =
+    Cake.Word64.toIntSigned
+      (Cake.Word64.concatAll
+         (get b i)       (get b (i + 1)) (get b (i + 2)) (get b (i + 3))
+         (get b (i + 4)) (get b (i + 5)) (get b (i + 6)) (get b (i + 7)))
+
+  (* Not present in OCaml (indicated by _-prefix) *)
+  let _get_float_le b i =
+    Cake.Double.fromWord
+      (Cake.Word64.concatAll
+         (get b i)       (get b (i + 1)) (get b (i + 2)) (get b (i + 3))
+         (get b (i + 4)) (get b (i + 5)) (get b (i + 6)) (get b (i + 7)))
+end;;
+
 module Pair = struct
   let compare cmpa cmpb (a1, b1) (a2, b2) =
     let ar = cmpa a1 a2 in
@@ -80,7 +124,16 @@ module Float = struct
   let of_string s = match Cake.Double.fromString s with
     | None -> failwith "Float.of_string"
     | Some x -> x
+  let frexp =
+    let bytes = Bytes.create 16 in
+    fun f ->
+      let f_as_int = Cake.Word64.toInt (Cake.Double.toWord f) in
+      let _ = Bytes.set_uint64_le bytes 0 f_as_int in
+      let _ = Cake.Runtime.customFFI "frexp" bytes in
+      (Bytes._get_float_le bytes 0, Bytes.get_int64_le bytes 8)
 end;;
+
+let frexp f = Float.frexp f;;
 
 type float = Float.float;;
 
@@ -266,23 +319,6 @@ module Hashtbl = struct
     Cake.List.foldl (fun (x,y) acc -> f x y acc) init (Cake.Hashtable.toAscList tbl)
 end;;
 
-module Bytes = struct
-  let length s = Cake.Word8_array.length s
-  (* NOTE OCaml also raises Invalid_argument if  n > Sys.max_string_length;
-       additionally, OCaml returns an uninitialized sequence with
-       arbitrary bytes. *)
-  let create n =
-    if n < 0 then invalid_arg "Bytes.create: negative argument" else
-      Cake.Word8_array.array n (Cake.Word8.fromInt 0)
-  (* NOTE OCaml can raise Invalid_argument in get, set, blit_string.
-       Unsure how the CakeML handle out-of-bounds accesses. *)
-  let get s n = Cake.Word8_array.sub s n
-  let set s n c = Cake.Word8_array.update s n c
-  let blit_string src src_pos dst dst_pos len =
-    Cake.Word8_array.copyVec src src_pos len dst dst_pos
-  let to_string s = Cake.Word8_array.substring s 0 (length s)
-end;;
-
 module Sys = struct
   let remove (s: string) = print "TODO Sys.remove (noop)\n"
   let command (s: string) =
@@ -306,8 +342,8 @@ end;;
 
 module Filename = struct
   let get_temp_dir_name () =
-    print_endline "TODO Filename.get_temp_dir_name (always returns /tmp)";
-    "/tmp"
+    print_endline "TODO Filename.get_temp_dir_name (always returns /tmp/)";
+    "/tmp/"
   let temp_file prefix suffix =
     print_endline "TODO Filename.temp_file (just concats temp dir, prefix, suffix)";
     get_temp_dir_name () ^ prefix ^ suffix
