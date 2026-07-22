@@ -229,7 +229,9 @@ let power_num b e =
     else if e mod 2 <> 0 then b */ pow b (e - 1)
     else let p = pow b (e / 2) in
            p */ p in
-  pow b (int_of_num e)
+  let n = int_of_num e in
+  if n >= 0 then pow b n
+  else (Int 1) // pow b (~- n)
 ;;
 
 let ( **/) = power_num;;
