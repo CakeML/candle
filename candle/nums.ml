@@ -9,6 +9,7 @@ module type NUM = sig
   val int_of_num : num -> int
   val string_of_num : num -> string
   val float_of_num  : num -> float
+  val num_of_string : string -> num
 
   val denominator : num -> num
   val numerator : num -> num
@@ -141,6 +142,12 @@ let float_of_num n =
       let n = Cake.Double.fromInt (Cake.Rat.numerator r) in
       let d = Cake.Double.fromInt (Cake.Rat.denominator r) in
       Cake.Double.(/) n d
+;;
+
+let num_of_string s =
+  match Cake.Int.fromString s with
+  | None -> failwith "num_of_string: not an integer"
+  | Some i -> Int i
 ;;
 
 let minus_num n =
@@ -293,6 +300,7 @@ let num_of_int = Num.num_of_int;;
 let int_of_num = Num.int_of_num;;
 let string_of_num = Num.string_of_num;;
 let float_of_num = Num.float_of_num;;
+let num_of_string = Num.num_of_string;;
 let denominator = Num.denominator;;
 let numerator = Num.numerator;;
 let minus_num = Num.minus_num;;

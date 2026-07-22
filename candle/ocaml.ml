@@ -53,6 +53,14 @@ module Candle = struct
     if r < 0 then Less
     else if r > 0 then Greater
     else Equal
+  ;;
+  let triple_compare cmp1 cmp2 cmp3 (a1, b1, c1) (a2, b2, c2) =
+    match cmp1 a1 a2 with
+    | 0 ->
+      (match cmp2 b1 b2 with
+       | 0 -> cmp3 c1 c2
+       | c -> c)
+    | c -> c
 end;;
 
 module Bytes = struct
@@ -347,4 +355,14 @@ module Filename = struct
   let temp_file prefix suffix =
     print_endline "TODO Filename.temp_file (just concats temp dir, prefix, suffix)";
     get_temp_dir_name () ^ prefix ^ suffix
+
+  (* Taken from OCaml stdlib/filename.ml. Licensed under LGPL.
+     Where applicable, takes the Unix variants of definitions. *)
+  let dir_sep = "/"
+  let is_dir_sep s i = s.[i] = '/'
+  let concat dirname filename =
+    let l = String.length dirname in
+    if l = 0 || is_dir_sep dirname (l-1)
+    then dirname ^ filename
+    else dirname ^ dir_sep ^ filename
 end;;
