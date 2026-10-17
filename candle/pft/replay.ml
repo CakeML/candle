@@ -1,8 +1,5 @@
 needs "candle/pft/pft.ml";;
 
-let here = "candle/pft/";;
-let extract_footer_path = here ^ "extract_footer";;
-
 let saved_ths = ref ([]: (string * thm) list);;
 let save_th name th = saved_ths := (name, th)::(!saved_ths);;
 let load_th name = assoc name (!saved_ths);;
@@ -13,12 +10,12 @@ let print_saved () =
       print_newline ()
     ) !saved_ths;;
 
-let decode_uleb128 : Text_io.instream -> int =
+let decode_uleb128_from next =
   let zero     = Cake.Word8.fromInt   0 in
   let lower7   = Cake.Word8.fromInt 127 in
   let high_bit = Cake.Word8.fromInt 128 in
-  let rec decode_uleb128 acc shift fd =
-    match Text_io.input1 fd with
+  let rec decode_uleb128 acc shift =
+    match next () with
     | None -> failwith "decode_uleb128: EOF"
     | Some char ->
        let byte = Cake.Word8.fromChar char in
@@ -26,45 +23,62 @@ let decode_uleb128 : Text_io.instream -> int =
        let acc = int * shift + acc in
        let shift = shift * 128 in
        let done_ = Cake.Word8.(=) zero (Cake.Word8.andb byte high_bit) in
-       if done_ then acc else decode_uleb128 acc shift fd
+       if done_ then acc else decode_uleb128 acc shift
   in decode_uleb128 0 1;;
 
+let decode_uleb128 fd =
+  decode_uleb128_from (fun () -> Text_io.input1 fd);;
+
+(* Text_io has no seek operation. Retain only the largest possible footer
+   (a uint16 length and its two-byte trailer) while scanning the file. *)
 let process_footer trace_path =
-  let cmd = String.concat " " [extract_footer_path; trace_path] in
-  let r = Sys.command cmd in
-  let _ = if r <> 0 then failwith ("process_footer: failed to extract footer") in
-  let stream = Text_io.openIn (trace_path ^ ".footer") in
-  try
+  let stream = Text_io.openIn trace_path in
+  let capacity = 65537 in
+  let tail = Array.make capacity '\000' in
+  let rec scan size =
     match Text_io.input1 stream with
-    | None -> failwith "EOF"
-    | Some cmd ->
-       if Char.code cmd <> 0xFF then failwith "bad opcode" else
-       let n_ty = decode_uleb128 stream in
-       let n_tm = decode_uleb128 stream in
-       let n_th = decode_uleb128 stream in
-       let n_ci = decode_uleb128 stream in
-       Text_io.closeIn stream;
-       (n_ty, n_tm, n_th, n_ci)
-  with e ->
-    Text_io.closeIn stream;
-    (match e with
-     | Failure s -> failwith ("process_footer: " ^ s)
-     | _ -> raise e);;
+    | None -> size
+    | Some c -> Array.set tail (size mod capacity) c; scan (size + 1) in
+  let size =
+    try let size = scan 0 in Text_io.closeIn stream; size
+    with e -> Text_io.closeIn stream; raise e in
+  if size < 2 then failwith "process_footer: missing length trailer";
+  let byte i = Char.code (Array.get tail (i mod capacity)) in
+  let length = byte (size - 2) + 256 * byte (size - 1) in
+  if length < 5 || length + 2 > size then
+    failwith "process_footer: invalid footer length";
+  let start = size - length - 2 in
+  if byte start <> 0xFF then failwith "process_footer: bad footer opcode";
+  let pos = ref (start + 1) in
+  let next () =
+    if !pos = size - 2 then None else
+    let c = Array.get tail (!pos mod capacity) in
+    pos := !pos + 1; Some c in
+  let n_ty = decode_uleb128_from next in
+  let n_tm = decode_uleb128_from next in
+  let n_th = decode_uleb128_from next in
+  let n_ci = decode_uleb128_from next in
+  if !pos <> size - 2 then
+    failwith "process_footer: footer length does not match counts";
+  (n_ty, n_tm, n_th, n_ci, length);;
 
 let expect_char fd char =
   match Text_io.input1 fd with
   | None -> failwith "expect_char: EOF"
   | Some char' ->
      if char = char' then ()
-     else failwith ("expect_char: unexpected " ^ String.make 1 char);;
+     else failwith ("expect_char: expected " ^ string_of_int (Char.code char) ^
+                    ", got " ^ string_of_int (Char.code char'));;
 
 let expect_pft fd =
   expect_char fd 'P'; expect_char fd 'F'; expect_char fd 'T';
   expect_char fd '\000';;
 
 let expect_version fd v =
-  if (decode_uleb128 fd) = v then ()
-  else failwith ("expect_version: unsupported version " ^ string_of_int v);;
+  let actual = decode_uleb128 fd in
+  if actual = v then ()
+  else failwith ("expect_version: unsupported version " ^ string_of_int actual ^
+                 "; expected " ^ string_of_int v);;
 
 let read_exactly fd n =
   let bytes = Bytes.create n in
@@ -85,15 +99,19 @@ let next_command fd = Text_io.input1 fd;;
 
 (* --- Replay files --- *)
 
-let replay trace_name =
-
-let trace_path = here ^ trace_name in
+(* Replay one binary PFT v1 file using the candle ruleset. *)
+let replay trace_path =
 
 let _ = print ("Processing " ^ trace_path ^ "\n") in
 let command_stream = Text_io.openIn trace_path in
+try
+let _ = expect_pft command_stream in
+let _ = expect_version command_stream 1 in
+let ruleset = decode_string command_stream in
+let _ =
+  if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset) in
+let (n_ty, n_tm, n_th, n_ci, footer_len) = process_footer trace_path in
 let _ = print_types_of_subterms := 2 in
-
-let (n_ty, n_tm, n_th, n_ci) = process_footer trace_path in
 
 (* Initial values for the arrays *)
 let xvar = mk_var ("x", aty) in
@@ -107,9 +125,6 @@ let cis = Array.make n_ci ([]: thm list) in
 let cmd_cnt = ref 1 in
 let incr_cnt () = cmd_cnt := !cmd_cnt + 1 in
 let print_cnt () = print (string_of_int (!cmd_cnt) ^ "\n") in
-
-let cleanup () =
-  print_cnt (); Text_io.closeIn command_stream in
 
 let pft_tyvar () =
   let id = decode_uleb128 command_stream in
@@ -383,9 +398,23 @@ let pft_expect () =
 
 let rec command_loop () =
   match next_command command_stream with
-  | None -> ()
+  | None -> failwith "command_loop: missing footer"
   | Some cmd_char ->
      let cmd = Char.code cmd_char in
+     if cmd = 0xFF then (
+       let actual_ty = decode_uleb128 command_stream in
+       let actual_tm = decode_uleb128 command_stream in
+       let actual_th = decode_uleb128 command_stream in
+       let actual_ci = decode_uleb128 command_stream in
+       if (actual_ty, actual_tm, actual_th, actual_ci) <>
+          (n_ty, n_tm, n_th, n_ci) then
+         failwith "command_loop: inconsistent footer counts";
+       expect_char command_stream (Char.chr (footer_len mod 256));
+       expect_char command_stream (Char.chr (footer_len / 256));
+       (match Text_io.input1 command_stream with
+        | None -> ()
+        | Some _ -> failwith "command_loop: data after footer"))
+     else (
      if cmd = 0x01 then pft_tyvar ()
      else if cmd = 0x02 then pft_tyop ()
      else if cmd = 0x03 then pft_var ()
@@ -421,27 +450,13 @@ let rec command_loop () =
      else if 0xF0 <= cmd && cmd <= 0xF3 then (
        decode_uleb128 command_stream;
        decode_uleb128 command_stream; ())
-     else if cmd = 0xFF then (
-       decode_uleb128 command_stream;
-       decode_uleb128 command_stream;
-       decode_uleb128 command_stream;
-       decode_uleb128 command_stream;
-       Text_io.input1 command_stream;
-       Text_io.input1 command_stream; ())
      else failwith ("command_loop: unsupported command: " ^ string_of_int cmd);
      incr_cnt ();
-     command_loop () in
+     command_loop ()) in
 
-let _ = expect_pft command_stream in
-let _ = expect_version command_stream 1 in
-let ruleset = decode_string command_stream in
-let _ =
-  if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset) in
-let _ = incr_cnt () in
+(try command_loop () with e -> (print_cnt (); raise e));
+print_cnt (); Text_io.closeIn command_stream; print "Success!\n"
+with e -> Text_io.closeIn command_stream; raise e;;
 
-(try command_loop () with e -> (cleanup (); raise e));
-cleanup (); print "Success!\n";;
-
+(* Replay files in dependency order, retaining SAVE entries between files. *)
 let replay_all paths = List.iter replay paths;;
-
-let _ = replay_all ["merged.candle.pft.bin"];;
