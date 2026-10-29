@@ -4,6 +4,8 @@ let here = "candle/pft/";;
 let extract_footer_path = here ^ "extract_footer";;
 
 let saved_ths = ref ([]: (string * thm) list);;
+(* COMPUTE_INIT remains in effect across files until the next initialization. *)
+let compute_eqs = ref (None: thm list option);;
 let save_th name th = saved_ths := (name, th)::(!saved_ths);;
 let load_th name = assoc name (!saved_ths);;
 let print_saved () =
@@ -42,9 +44,8 @@ let process_footer trace_path =
        let n_ty = decode_uleb128 stream in
        let n_tm = decode_uleb128 stream in
        let n_th = decode_uleb128 stream in
-       let n_ci = decode_uleb128 stream in
        Text_io.closeIn stream;
-       (n_ty, n_tm, n_th, n_ci)
+       (n_ty, n_tm, n_th)
   with e ->
     Text_io.closeIn stream;
     (match e with
@@ -93,7 +94,7 @@ let _ = print ("Processing " ^ trace_path ^ "\n") in
 let command_stream = Text_io.openIn trace_path in
 let _ = print_types_of_subterms := 2 in
 
-let (n_ty, n_tm, n_th, n_ci) = process_footer trace_path in
+let (n_ty, n_tm, n_th) = process_footer trace_path in
 
 (* Initial values for the arrays *)
 let xvar = mk_var ("x", aty) in
@@ -102,7 +103,6 @@ let xrefl = REFL xvar in
 let tys = Array.make n_ty aty in
 let tms = Array.make n_tm xvar in
 let ths = Array.make n_th xrefl in
-let cis = Array.make n_ci ([]: thm list) in
 
 let cmd_cnt = ref 1 in
 let incr_cnt () = cmd_cnt := !cmd_cnt + 1 in
@@ -197,7 +197,6 @@ let pft_new_type_definition () =
   Array.set ths (id + 1) repth in
 
 let pft_compute_init () =
-  let id = decode_uleb128 command_stream in
   let n_eqs = decode_uleb128 command_stream in
   let rec loop i eqs =
     if i <= 0 then rev eqs else
@@ -205,11 +204,10 @@ let pft_compute_init () =
       let eq = Array.get ths eq_id in
       loop (i - 1) (eq::eqs) in
   let eqs = loop n_eqs [] in
-  Array.set cis id eqs in
+  compute_eqs := Some eqs in
 
 let pft_compute () =
   let id = decode_uleb128 command_stream in
-  let ci_id = decode_uleb128 command_stream in
   let tm_id = decode_uleb128 command_stream in
   let n_ths = decode_uleb128 command_stream in
   let rec loop i eqs =
@@ -217,7 +215,9 @@ let pft_compute () =
       let eq_id = decode_uleb128 command_stream in
       let eq = Array.get ths eq_id in
       loop (i - 1) (eq::eqs) in
-  let eqs = Array.get cis ci_id in
+  let eqs = match !compute_eqs with
+    | Some eqs -> eqs
+    | None -> failwith "COMPUTE before COMPUTE_INIT" in
   let code_eqs = loop n_ths [] in
   let tm = Array.get tms tm_id in
   let th = Kernel.compute (eqs, code_eqs) tm in
@@ -415,14 +415,13 @@ let rec command_loop () =
      else if cmd = 0x51 then pft_load ()
      (* We allocate enough memory to fit the peak number of objects, so we can
         can ignore deletion requests. *)
-     else if 0xE0 <= cmd && cmd <= 0xE3 then (
+     else if 0xE0 <= cmd && cmd <= 0xE2 then (
        decode_uleb128 command_stream; ())
      else if cmd = 0xEF then pft_expect ()
-     else if 0xF0 <= cmd && cmd <= 0xF3 then (
+     else if 0xF0 <= cmd && cmd <= 0xF2 then (
        decode_uleb128 command_stream;
        decode_uleb128 command_stream; ())
      else if cmd = 0xFF then (
-       decode_uleb128 command_stream;
        decode_uleb128 command_stream;
        decode_uleb128 command_stream;
        decode_uleb128 command_stream;
