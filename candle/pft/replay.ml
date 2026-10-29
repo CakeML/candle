@@ -63,10 +63,6 @@ let expect_pft fd =
   expect_char fd 'P'; expect_char fd 'F'; expect_char fd 'T';
   expect_char fd '\000';;
 
-let expect_version fd v =
-  if (decode_uleb128 fd) = v then ()
-  else failwith ("expect_version: unsupported version " ^ string_of_int v);;
-
 let read_exactly fd n =
   let bytes = Bytes.create n in
   let rec loop i =
@@ -81,6 +77,10 @@ let read_exactly fd n =
 let decode_string fd =
   let s_len = decode_uleb128 fd in
   read_exactly fd s_len;;
+
+let expect_version fd v =
+  if (decode_string fd) = v then ()
+  else failwith ("expect_version: unsupported version; expected " ^ v);;
 
 let next_command fd = Text_io.input1 fd;;
 
@@ -432,7 +432,7 @@ let rec command_loop () =
      command_loop () in
 
 let _ = expect_pft command_stream in
-let _ = expect_version command_stream 1 in
+let _ = expect_version command_stream "0.1.0" in
 let ruleset = decode_string command_stream in
 let _ =
   if ruleset <> "candle" then failwith ("unsupported ruleset: " ^ ruleset) in
