@@ -1,6 +1,6 @@
 --- basis_ffi.c
 +++ basis_ffi.c
-@@ -294,8 +294,34 @@
+@@ -203,8 +203,34 @@
  }
  
  void fficustom (unsigned char *c, long clen, unsigned char *a, long alen) {
@@ -36,4 +36,4 @@
 +  }
  }
  
- // ---------------------------------------------------------------------------
+ /* Double FFI */
