@@ -48,22 +48,27 @@ default: update_database.ml pa_j.cmo hol.sh;
 # Create a local OPAM switch and install dependencies on it.
 # This will use the latest OCaml version that fully supports features of
 # HOL Light.
-# ledit is installed for line editing of OCaml REPL
-# Use --no-install to avoid installing HOL Light through the opam file
-# in this directory.
+# Use --no-install to avoid installing HOL Light itself through the opam file
+# in this directory; the dependencies are then installed with --deps-only,
+# so that the versions actually used (camlp5, zarith and ledit, the last for
+# line editing of the OCaml REPL) are the ones that the opam file asks for
+# rather than a second, hand-maintained list that can drift away from it.
+# The camlp5 that OPAM chose is then pinned to that same version: the opam file
+# binds only while the dependencies are resolved, and HOL Light itself is not
+# installed here, so an 'opam upgrade' could otherwise move camlp5 out of range.
 switch:; \
   opam update ; \
   opam switch create . ocaml-base-compiler.4.14.0 --no-install ; \
-  eval $(opam env) ; \
-  opam install -y zarith ledit ; \
-  opam pin -y add camlp5 8.03.06
+  eval $$(opam env) ; \
+  opam install -y . --deps-only && \
+  opam pin add -y -n camlp5 $$(opam var camlp5:version)
 
 switch-5:; \
   opam update ; \
-  opam switch create . ocaml-base-compiler.5.4.0 --no-install ; \
-  eval $(opam env) ; \
-  opam install -y zarith ledit ; \
-  opam pin -y add camlp5 8.04.00
+  opam switch create . ocaml-base-compiler.5.5.2 --no-install ; \
+  eval $$(opam env) ; \
+  opam install -y . --deps-only && \
+  opam pin add -y -n camlp5 $$(opam var camlp5:version)
 
 # Choose an appropriate "update_database.ml" file
 
@@ -83,7 +88,7 @@ pa_j.ml: pa_j/pa_j_3.07.ml pa_j/pa_j_3.08.ml pa_j/pa_j_3.09.ml \
          pa_j/pa_j_3.1x_5.xx.ml pa_j/pa_j_3.1x_6.xx.ml \
          pa_j/pa_j_4.xx_8.00.ml pa_j/pa_j_4.xx_8.02.ml \
          pa_j/pa_j_4.xx_8.03.ml pa_j/pa_j_4.xx_8.03.06.ml \
-         pa_j/pa_j_5.4_8.04.00.ml ; \
+         pa_j/pa_j_8.04.00.ml ; \
   cp pa_j/`pa_j/chooser.sh` pa_j.ml
 
 # Choose an appropriate bignum library.
@@ -171,9 +176,35 @@ UnitTests/printer_tests.native: UnitTests/printer_tests_inlined.cmx hol_lib.cmxa
 UnitTests/printer_tests_inlined.cmx: UnitTests/printer_tests_inlined.ml hol_lib.cmxa hol.sh ; \
         ./hol.sh compile UnitTests/printer_tests_inlined.ml
 
+# UnitTests/parser_tests.ml: parsing and typechecking of quotations.
+UnitTests/parser_tests_inlined.ml: UnitTests/parser_tests.ml inline_load.ml hol.sh ; \
+        ./hol.sh inline-load UnitTests/parser_tests.ml UnitTests/parser_tests_inlined.ml
+UnitTests/parser_tests.byte: UnitTests/parser_tests_inlined.ml hol_lib.cmo hol.sh ; \
+        ocamlfind ocamlc -package zarith -linkpkg -pp "`./hol.sh -pp`" \
+        -I . bignum.cmo hol_loader.cmo hol_lib.cmo \
+        UnitTests/parser_tests_inlined.ml -o UnitTests/parser_tests.byte
+UnitTests/parser_tests.native: UnitTests/parser_tests_inlined.cmx hol_lib.cmxa hol.sh ; \
+        ./hol.sh link UnitTests/parser_tests_inlined.cmx -o UnitTests/parser_tests.native
+UnitTests/parser_tests_inlined.cmx: UnitTests/parser_tests_inlined.ml hol_lib.cmxa hol.sh ; \
+        ./hol.sh compile UnitTests/parser_tests_inlined.ml
+
+# UnitTests/records.ml: record type (Library/records.ml) checks.
+UnitTests/records_inlined.ml: UnitTests/records.ml inline_load.ml hol.sh ; \
+        ./hol.sh inline-load UnitTests/records.ml UnitTests/records_inlined.ml
+UnitTests/records.byte: UnitTests/records_inlined.ml hol_lib.cmo hol.sh ; \
+        ocamlfind ocamlc -package zarith -linkpkg -pp "`./hol.sh -pp`" \
+        -I . bignum.cmo hol_loader.cmo hol_lib.cmo \
+        UnitTests/records_inlined.ml -o UnitTests/records.byte
+UnitTests/records.native: UnitTests/records_inlined.cmx hol_lib.cmxa hol.sh ; \
+        ./hol.sh link UnitTests/records_inlined.cmx -o UnitTests/records.native
+UnitTests/records_inlined.cmx: UnitTests/records_inlined.ml hol_lib.cmxa hol.sh ; \
+        ./hol.sh compile UnitTests/records_inlined.ml
+
 default: hol_lib.cma hol_lib.cmxa \
          UnitTests/basic_tests.byte UnitTests/basic_tests.native \
-         UnitTests/printer_tests.byte UnitTests/printer_tests.native
+         UnitTests/printer_tests.byte UnitTests/printer_tests.native \
+         UnitTests/parser_tests.byte UnitTests/parser_tests.native \
+         UnitTests/records.byte UnitTests/records.native
 endif
 
 # Build a standalone hol image called "hol" (needs Linux and DMTCP)
@@ -275,6 +306,10 @@ clean:; \
          UnitTests/basic_tests.byte UnitTests/basic_tests.native \
          UnitTests/printer_tests_inlined.* \
          UnitTests/printer_tests.byte UnitTests/printer_tests.native \
+         UnitTests/parser_tests_inlined.* \
+         UnitTests/parser_tests.byte UnitTests/parser_tests.native \
+         UnitTests/records_inlined.* \
+         UnitTests/records.byte UnitTests/records.native \
          ocaml-hol hol.sh hol hol.ckpt \
          hol.multivariate hol.multivariate.ckpt \
          hol.sosa hol.sosa.ckpt \

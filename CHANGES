@@ -8,6 +8,559 @@
   * page: https://github.com/jrh13/hol-light/commits/master         *
   * *****************************************************************
 
+Tue 27th Oct 2026       100/unsolvability.ml [new file]
+
+Proved the unsolvability of the quintic by radicals, number 16 of the 100
+theorems. radical_number is the inductively generated set of complex
+numbers obtained from 0 and 1 by field operations and extraction of roots
+of positive degree. NOT_RADICAL_QUINTIC_ROOT proves
+
+  |- ~(?z. radical_number z /\ z pow 5 - Cx(&4) * z + Cx(&2) = Cx(&0))
+
+The polynomial is irreducible by Eisenstein's criterion and has exactly
+three real roots, so conjugation swaps its two non-real roots. The general
+Galois-theoretic transposition criterion then excludes every radical root.
+NOT_RADICAL_ROOT_REAL_FIELD gives the corresponding result for any
+irreducible polynomial over a real subfield, of prime degree at least 5,
+with exactly two non-real roots. The file uses the same definition of
+complex_ring as 100/transcendence.ml, so the two can be loaded together.
+
+Tue 27th Oct 2026       Library/finite_fields.ml [new file], Library/rabin_test.ml [deleted]
+
+Added primitive roots and cyclic unit groups (FINITE_FIELD_PRIMITIVE_ROOT),
+subfields and homomorphisms, norm and trace surjectivity and fibre sizes,
+Hilbert 90 (HILBERT_90_FINITE_FIELD), Frobenius conjugates of irreducible
+roots, the factorization of X^(q^n) - X (X_POW_SUB_X_FINITE_FIELD), counts
+and existence of irreducible polynomials of each positive degree
+(FINITE_FIELD_IRREDUCIBLE_EXISTS), and finite layers of algebraic closures
+and normal extensions. The Galois group of a normal extension of a finite
+field is abelian.
+
+Rabin's irreducibility test (RABIN_IRREDUCIBILITY_TEST), formerly in
+Library/rabin_test.ml, is now in finite_fields.ml, with its statements
+unchanged apart from bound-variable names, and the former file has been
+deleted. FINITE_FIELD_ELEMENT_POW, FINITE_FIELD_POW_ITERATE and
+FINITE_FIELD_CARD_CHAR_POWER move here and
+RING_ENDOMORPHISM_FROBENIUS_ITERATE to ringtheory.ml, with the same
+statements up to bound-variable names. The other auxiliary lemmas of the
+former file have been removed, the library now having more general versions;
+no other file in the distribution used them. The removed names are
+RING_DIVIDES_POW_ITERATE, POLY_NONUNIT_DEGREE_GE_1, RING_DIVIDES_REDUCE,
+FIELD_NONZERO_PRODUCT_PERMUTE, QUOTIENT_POLY_RING_FINITE_CARD,
+IRREDUCIBLE_DIVIDES_XQ_MINUS_X_GEN, IRREDUCIBLE_DIVIDES_XQ_MINUS_X,
+FIELD_ROOTS_BOUND, IRREDUCIBLE_DIVIDES_DEGREE_BOUND and
+IRREDUCIBLE_DIVIDES_DEGREE.
+
+Tue 27th Oct 2026       Library/galois.ml [new file], Library/cyclotomic.ml [new file], Library/primitive.ml
+
+Added Galois groups, Galois extensions and fixed fields, Artin's fixed-field
+theorem (ARTIN_FIXED_FIELD), the fundamental theorem for finite Galois
+extensions (FUNDAMENTAL_THEOREM_OF_GALOIS_THEORY), normal subgroups and
+quotients, conjugation and composita, and natural irrationalities. Added
+Galois groups of polynomials, including prime-degree transposition,
+discriminant and cubic criteria; Galois groups of finite fields; Hilbert 90
+(HILBERT_90); Kummer and Artin-Schreier extensions; radical extensions and
+elements; and the equivalence in characteristic zero between solvability
+by radicals and solvability of the Galois group (SOLVABLE_BY_RADICALS_EQ,
+GALOIS_SOLVABLE_EQ_RADICAL), with the criterion
+PRIME_TRANSPOSITION_NO_RADICAL_ROOT for particular polynomials. Material
+for infinite Galois theory includes restriction maps and the directed
+family of finite Galois subextensions covering a Galois extension. New
+definitions:
+
+        finite_galois_subfields
+        fixed_field
+        galois_extension
+        galois_group
+        radical_element
+        radical_extension
+
+The separate cyclotomic.ml embeds the Galois group of k(z), for z of finite
+positive order n, in the units modulo n, and characterizes when it is the
+whole group by [k(z):k] = phi(n). It loads modmul_group.ml. Also made
+primitive.ml explicitly restore its required overload ordering.
+
+Tue 27th Oct 2026       Library/fieldtheory.ml, 100/transcendence.ml
+
+Extended the field theory library, with extensions given by arbitrary
+homomorphisms rather than only inclusions, to cover extension degrees,
+minimal polynomials, perfect fields, splitting extensions with their
+existence and uniqueness (SPLITTING_EXTENSION_EXISTS,
+SPLITTING_EXTENSION_UNIQUE), normal and separable extensions, separable
+closures and purely inseparable extensions, separable and inseparable
+degrees (EXTENSION_DEGREE_SEPARABLE_INSEPARABLE), extensions and
+independence of homomorphisms, normal closures and the primitive element
+theorem (PRIMITIVE_ELEMENT_THEOREM). The degree of an infinite extension is
+0, so the tower law EXTENSION_DEGREE_TOWER_LAW needs no finiteness
+hypothesis. Also added trace and norm of finite extensions, with formulas in
+terms of minimal polynomials and embeddings (ALGEBRA_TRACE_NORM_EMBEDDINGS)
+and tower laws, and the existence and uniqueness of finite fields of each
+prime power order (FINITE_FIELD_EXISTS, ISOMORPHIC_FINITE_FIELDS).
+fieldtheory.ml now loads Library/ring_det.ml, where the trace and norm are
+defined. New definitions:
+
+        extension_degree
+        inseparable_degree
+        minimal_polynomial
+        normal_extension
+        perfect_field
+        poly_splits_over
+        purely_inseparable_extension
+        ring_homomorphism_extensions
+        separable_closure
+        separable_degree
+        separable_element
+        separable_extension
+        splitting_extension
+
+Added span and basis lemmas, including free bases of simple algebraic
+extensions. Over a field, a finite projective basis exists exactly when a
+finite free basis does. Further root and separability results include that
+over a field X^n - c is separable for nonzero c when the characteristic
+does not divide n.
+
+FIELD_EXTENSION_INTO_SUBFIELD_GENERATED and RING_SPAN_EMPTY lose redundant
+hypotheses; FIELD_EXTENSION_FROM_SUBRING_GENERATED now quantifies s; and
+ALGEBRAICALLY_CLOSED_FIELD_DECOMPOSE has one combined antecedent. The proof
+of FINITELY_GENERATED_EXTENSION_TRANS_EQ is adapted to the first of these.
+
+In 100/transcendence.ml, replaced the local minimal_polynomial constant by
+minimal_polynomial (QinC_ring,complex_ring) I z from the general library.
+MINIMAL_POLYNOMIAL_QINC_COMPLEX recovers the old characterization, and the
+six theorems that mentioned the old constant now use the general one.
+Added the field-extension, evaluation and algebraicity bridges, adjusted the
+imports, and adapted the polynomial separability proofs.
+
+Tue 27th Oct 2026       Library/ring_det.ml [new file]
+
+Added determinants of square arrays over any commutative ring, indexed by
+any finite set, with the standard determinant, cofactor, adjugate,
+multilinearity and multiplicativity (RING_DET_MUL) properties, reindexing,
+triangular and block arrays, Kronecker and Vandermonde formulas, Ryser's
+formula for the permanent, the Weinstein-Aronszajn identity and
+characteristic polynomials.
+
+Defined finite free and projective bases and the canonical trace and norm
+of an algebra admitting a finite projective basis, with defaults 0 and 1
+when there is none. In a free basis these are the trace and determinant of
+the multiplication matrix; in a projective basis the norm is det(A + I - E),
+where A represents multiplication and E the identity. Proved independence
+of the basis, the basic algebraic, unit, base-change, tower, product and
+discriminant properties, and Cayley-Hamilton for the multiplication matrix
+(MUL_MATRIX_CHARPOLY_ROOT).
+
+Added polynomial resultants and discriminants and their root formulas.
+Over a field, excluding a pair of zero polynomials, the resultant vanishes
+exactly when there is a nonconstant common factor (POLY_RESULTANT_EQ_0).
+For a polynomial of positive degree, the discriminant vanishes exactly when
+it is not separable (POLY_DISCRIMINANT_EQ_0). The file does not change the
+number priority. New definitions:
+
+        algebra_norm
+        algebra_trace
+        basis_coordinates
+        basis_discriminant
+        free_basis
+        mul_matrix
+        poly_discriminant
+        poly_resultant
+        projective_basis
+        ring_charpoly
+        ring_cofactor
+        ring_det
+        ring_sign
+
+Tue 27th Oct 2026       Library/ring_groups.ml [new file]
+
+Added a new file with the additive group and the unit group of a ring, their
+induced homomorphisms and behaviour under subrings and products, including
+restricted products (as for adeles and ideles), and Dedekind's independence
+of characters for homomorphisms into the units of an integral domain
+(GROUP_HOMOMORPHISMS_UNITS_INDEPENDENT). New definitions:
+
+        ring_additive_group
+        unit_group
+
+Tue 27th Oct 2026       Library/grouptheory.ml
+
+Added the second and third isomorphism theorems
+(SECOND_GROUP_ISOMORPHISM_THEOREM, THIRD_GROUP_ISOMORPHISM_THEOREM) and
+explicit forms of all three, coset and quotient-group lemmas, inverse limits
+and restricted products, and Iwasawa's simplicity criterion
+(IWASAWA_SIMPLE): the quotient by the kernel of the action has no normal
+subgroups other than the trivial one and itself. The inverse-limit
+construction does not require a directed index relation. Also added
+normal-subgroup results for groups of orders 6 and 12, and further
+abelian-group, homomorphism and exact-sequence lemmas. New definitions:
+
+        group_cosets
+        inverse_limit_group
+        restricted_product_group
+
+Tue 27th Oct 2026       Library/ringtheory.ml
+
+Added commutative algebra concerning radicals, the Jacobson radical and
+minimal prime ideals (RADICAL_EQ_INTERS_MINIMAL_PRIMES), localization maps
+and iterated localizations, fields of fractions with the universal map into
+fields (FRACTION_FIELD_MAP, FRACTION_FIELD_MAP_ISOMORPHISM), residue fields
+(FIELD_RESIDUE_FIELD), prime ideals of finite products, and restricted
+products of rings, together with associated homomorphism, quotient,
+divisibility and polynomial lemmas. The conversion
+RING_HOMOMORPHISM_PUSH_CONV moves a homomorphism through ring operations,
+leaving the carrier conditions on the atoms as hypotheses. New definitions:
+
+        field_of_fractions
+        fraction_field_map
+        jacobson_radical
+        localization_map
+        minimal_prime_ideal
+        minimal_prime_over
+        residue_field
+        residue_hom
+        restricted_product_ring
+
+Tue 27th Oct 2026       Multivariate/metric.ml, Multivariate/topology.ml, Multivariate/canal.ml, Multivariate/determinants.ml, Multivariate/measure.ml
+
+Added quotient topologies and their universal property, the topology of
+pointwise convergence with discrete codomain, irreducible sets and sober
+spaces, and further results about continuous maps, discrete and product
+spaces, and locally compact Hausdorff spaces. Added continuity of the norm
+and complex inverse, and second countability and local compactness of
+Euclidean space. Moved INDUCT_MATRIX_ROW_OPERATIONS,
+INDUCT_MATRIX_ELEMENTARY and INDUCT_MATRIX_ELEMENTARY_ALT unchanged from
+measure.ml to determinants.ml, where they need no measure theory. New
+definitions:
+
+        irreducible_in
+        pointwise_topology
+        quotient_topology
+        sober_space
+
+Tue 27th Oct 2026       Library/permutations.ml, Library/transc.ml, Multivariate/cvectors.ml, Multivariate/flyspeck.ml, Permutation/permutation.ml, 4CT/kempe.ml
+
+Renamed bindings that hid unrelated theorems or tactics in other files:
+REAL_ABS_SIGN in permutations.ml is now REAL_ABS_SIGN_PERMUTATION;
+FINITE_INDEX_INRANGE_2 in cvectors.ml is FINITE_INDEX_INRANGE_4;
+DIVISION_0 and SUM_DIFFS in transc.ml are DIVISION_0_DSIZE and PSUM_DIFFS;
+NORM_CROSS in flyspeck.ml is NORM_CROSS_SIN; the definition theorem for
+PERMUTATION in Permutation/permutation.ml is PERMUTATION_DEF; and the
+three-argument LIST_CASES_TAC in kempe.ml is X_LIST_CASES_TAC. Updated
+their uses. The mathematical constants and statements are unchanged.
+
+Tue 27th Oct 2026       Multivariate/*, Library/jacobi.ml, Library/calc_real.ml, Permutation/morelist.ml
+
+Made several analysis and number-theory files explicitly restore the number
+priorities their proofs require, so that they load the same way after
+files that leave a different priority. prioritize_complex() now first calls
+prioritize_real(), giving real priority to overloaded operations without a
+complex counterpart. Added num annotations to three NUMBER_RULE quotations
+in jacobi.ml. ASSERT_TAC in Permutation/morelist.ml now uses
+STRIP_ASSUME_TAC, matching Multivariate/misc.ml. Also made canal.ml
+explicitly load measure.ml, whose measurability results it uses.
+
+Mon 26th Oct 2026       int.ml, iterate.ml, lists.ml, sets.ml, Library/iter.ml, Library/wo.ml
+
+Added integer-power monotonicity, list snoc decomposition, commuting-square
+and fibre-bijection lemmas, bounds on weakly increasing chains of sets,
+upward-closed number segments, digit-expansion bounds and uniqueness,
+ITER_INTERTWINE_INVARIANT, and a dual form of Zorn's lemma using
+intersections of nonempty chains (ZL_SUBSETS_INTERS_NONEMPTY). No existing
+theorem is changed.
+
+Sun 25th Oct 2026       Library/card.ml, Library/fieldtheory.ml
+
+Added number-type annotations in CARD_EQ_REAL and
+FINITELY_GENERATED_EXTENSION_TRANS_EQ to make their proofs independent of
+the incoming number priority. No statement changes.
+
+Sat 24th Oct 2026       Library/ringtheory.ml, Autoformalization/puiseux.ml
+
+Added polynomial splitting and separability, further degree, root,
+derivative and factorization results, Frobenius maps, finite-ring polynomial
+counts, and multiplicative-order and roots-of-unity results. Generalized
+RING_MUL_LCANCEL and RING_MUL_RCANCEL from units to regular elements;
+generalized POLY_DEG_CMUL and POLY_DEG_MUL_X_MINUS_A with conditional
+conclusions; restated POLY_DEG_VAR_POW and POLY_DERIV_VAR_POW using
+polynomial operations; quantified the previously free variable of
+POLY_CONST_SUBRING_GENERATED; and restated the separability theorems with
+poly_separable. Adapted the use of POLY_DEG_CMUL in puiseux.ml. New
+definitions:
+
+        poly_separable
+        poly_splits
+
+Sat 24th Oct 2026       Library/matroids.ml, Library/card.ml, Library/permutations.ml, Library/grouptheory.ml, Library/symmetric_group.ml, Examples/digit_serial_methods.ml
+
+Added matroid basis and dimension bounds, equal-fibre cardinalities,
+permutation and restriction lemmas, solvable-group chains with cyclic and
+prime-order quotients, exponent coordinates for finitely generated abelian
+groups, and TRANSITIVE_TRANSPOSITION_SYMMETRIC_ISOMORPHISM: a monomorphism
+into the symmetric group of a set of prime size whose image is transitive
+and contains a transposition is an isomorphism. Renamed bound variables
+sigma and tau in symmetric_group.ml and digit_serial_methods.ml so that
+they can be loaded after multiplicative.ml defines constants of those names.
+Only bound-variable names change in those existing statements.
+
+ Mon 19th Oct 2026       4CT/* [new directory], eval_compile/* [new directory], Autoformalization/planar_graph.ml, Multivariate/metric.ml
+
+Added a formal proof of the Four Colour Theorem, autoformalized by Claude.
+It is almost entirely a port of Georges Gonthier's Coq proof, following its
+theory files closely: hypermaps and their geometry, colourings, the Jordan
+and Kempe chain arguments, the reducibility of the 633 configurations of
+Robertson, Sanders, Seymour and Thomas, and unavoidability by discharging.
+The main exception is the passage to the plane at the end, which goes via
+the planar graphs of Autoformalization/planar_graph.ml instead of
+Gonthier's discretization of the plane. The main theorems are FOUR_COLOR
+for hypermaps (Gonthier's four_color_hypermap), FOUR_COLOR_PLANAR_GRAPH
+for finite simple planar graphs, and perhaps most satisfyingly of all
+FOUR_COLOR_MAP for maps in the plane: any set of pairwise disjoint open
+connected subsets of real^2, finite or not, can be coloured with four
+colours so that regions sharing a border point lying in the closure of
+no third region get different colours.
+
+  Georges Gonthier
+  "Formal Proof - The Four-Color Theorem"
+  Notices of the AMS 55 (2008)
+  https://github.com/rocq-community/fourcolor
+
+As in Gonthier's proof, the reducibility checks and the case analysis for
+unavoidability are carried out by computation, but here entirely inside
+the logic by proof-producing evaluation, every step a kernel inference.
+Loading 4CT/make.ml does everything, and takes around 10 hours natively on
+one core. With OCaml 5, 4CT/make_parallel.ml runs the computations in
+parallel within one HOL Light process (about 22 minutes on 128 cores), and
+"make native-hypermap" in 4CT builds just the hypermap theorem, without
+Multivariate.
+
+The reducibility evaluator is generated by eval_compile, Alexey Solovyev's
+compiler of equational theorems into OCaml code, now included in its own
+directory eval_compile/ so that it can be used elsewhere too. It is the
+core of his compute-hol-light,
+
+  https://github.com/hol-light-family/compute-hol-light
+
+changed only in the load paths, a small OCaml version detail and the
+layout, as recorded in eval_compile/README.md.
+
+Also renamed a variable in a proof in each of Multivariate/metric.ml and
+Autoformalization/planar_graph.ml (`cube` and `edge`), so that they can be
+loaded after the 4CT files, which define constants of those names.
+
+Mon 19th Oct 2026       mcp/
+
+Removed the mcp subdirectory, now moved to a separate repo in the HOL Light
+family collection here:
+
+        https://github.com/hol-light-family/hol-light-mcp
+
+Mon 19th Oct 2026       holtest_parallel, holtest.mk
+
+Added some fixes from June Lee to the holtest machinery, notably fixing
+an incorrect pathname to Examples/apery which had not been flagged.
+
+Sat 17th Oct 2026       Autoformalization/godel_notac.ml [new file], Autoformalization/godel_completeness.ml
+
+Added an autoformalized proof of the independence of the axiom of choice
+from ZF set theory, again produced by Claude, complementing the files of
+14th October. The new file godel_notac.ml shows that from an arbitrary model
+of ZF, again with no assumption that it is well-founded, countable or
+satisfies choice, one obtains a model of ZF + not AC over the same type
+(ZF_MODEL_NOT_AC_MODEL); with ZF_MODEL_AC_MODEL from godel_gch.ml this gives
+the relative consistency of both AC and its negation. It is loaded after
+godel_forcing.ml, and godel_completeness.ml now loads it in turn and deduces
+the syntactic form: if ZF is consistent then ZF proves neither AC nor its
+negation (CON_ZF_IMP_INDEPENDENT_AC, from CON_ZF_IMP_CON_ZFC and
+CON_ZF_IMP_CON_ZF_NOT_AC).
+
+The model is a symmetric submodel of a Cohen extension, again built in
+Boolean-valued form over L. In a model of ZF + V=L, take the regular-open
+algebra of the poset of finite partial functions from w1 x omega to 2, where
+w1 is aleph_1. Permutations of w1 act on conditions, on the algebra (as
+complete Boolean algebra automorphisms) and on names, compatibly with
+Boolean values. A name is symmetric if for some countable subset e of w1 it
+is fixed by every permutation fixing e pointwise, and hereditarily symmetric
+(HS) if all names hereditarily below it are too. With quantifiers restricted
+to HS names every axiom of ZF has value top, and the quotient of the HS
+names by any ultrafilter in the model is a model of ZF by an HS version of
+Los's theorem (HS_QUOT_MODEL_ZF). Countable rather than the usual finite
+supports are used because this rests on a maximum principle for HS names,
+obtained by mixing over an antichain, which is countable as the algebra is
+ccc, and the mixture is symmetric only if countably many supports can be
+combined into one. In the quotient, a family of nonempty sets built from the
+Cohen reals has no choice function: any HS candidate has a countable support
+e, and a transposition of two indices outside e fixes the candidate and the
+family but moves the chosen element, so the Boolean value of its being a
+choice function is bottom (NCR_MAIN, HS_QUOT_NOT_AC). As before, no
+countable transitive models or generic filters are needed.
+
+Fri 16th Oct 2026       Makefile
+
+Changed "make switch" and "make switch-5" to pin camlp5 before installing
+ledit rather than after. Since ledit depends on camlp5, installing it first
+pulled in the latest camlp5 (8.05.02), so the pin then downgraded camlp5
+and made OPAM rebuild ledit. With OPAM 2.6 that rebuild fails with "No rule
+to make target `all'": when a package with a "remove:" field, as ledit has,
+must be removed before it is rebuilt, as here, OPAM 2.6 moves the
+downloaded sources into a directory for the removal and then runs the build
+in an empty directory. OPAM 2.5 and earlier are not affected, but Homebrew
+now provides OPAM 2.6, so this showed up in the macOS CI of s2n-bignum. Now
+ledit is just built once, against the pinned camlp5.
+
+The pin and the install are also now joined by "&&", so that a failed pin
+is reported rather than leaving an unpinned camlp5, and "eval $(opam env)"
+is now "eval $$(opam env)", since make was expanding "$(opam env)" itself
+(to nothing).
+
+Wed 14th Oct 2026       Autoformalization/godel_gch.ml, Autoformalization/godel_forcing.ml, Autoformalization/godel_completeness.ml [new files]
+
+Added autoformalized proofs of the consistency (godel_gch.ml) and
+independence (godel_forcing.ml) of both the continuum hypothesis CH and the
+generalized continuum hypothesis GCH, together with the axiom of choice,
+relative to ZF set theory, again autoformalized by Claude. Starting from an
+arbitrary model of ZF, with no assumption that it is well-founded,
+countable or satisfies choice, we obtain models of ZFC + GCH
+(ZF_MODEL_GCH_MODEL, and ZF_MODEL_CH_MODEL for CH alone) and of ZFC + not
+CH (ZF_MODEL_NOT_CH_MODEL), which are a fortiori models of ZFC + not GCH
+(ZF_MODEL_NOT_GCH_MODEL). A third file, godel_completeness.ml, proves a
+completeness theorem for the object language and deduces the corresponding
+syntactic statements, e.g. that if ZF is consistent then ZFC proves neither
+CH nor its negation (CON_ZF_IMP_INDEPENDENT_CH,
+CON_ZF_IMP_INDEPENDENT_GCH).
+
+The object language is first-order set theory with membership as its only
+nonlogical symbol, interpreted in structures given by a domain D:A->bool
+and a membership relation E:A->A->bool over an arbitrary HOL type A. In
+godel_gch.ml, Godel's constructible universe L is built inside the model
+and shown to be a submodel satisfying ZF + V=L, and hence AC, using the
+canonical wellordering of L, and GCH, using a condensation argument with
+the Mostowski collapse of elementary hulls. In godel_forcing.ml, Cohen
+forcing is carried out in Boolean-valued form over L: in a model of
+ZF + V=L, the regular-open algebra of the poset of finite partial functions
+from aleph_2 x omega to 2 is a ccc complete Boolean algebra, all axioms of
+ZFC and the negation of CH have Boolean value top in the universe of names,
+and the quotient by an ultrafilter in the model is a two-valued model by
+Los's theorem, again over the type A. In godel_completeness.ml, a
+Hilbert-style proof system following Enderton is shown sound and complete
+by Henkin's method (since the language has no constants, the Henkin
+witnesses are variables chosen through a Godel numbering), so that a set of
+formulas is consistent, in the sense that the universal closures of its
+members do not derive False, exactly when it has a model, which may be
+taken countable. No countable transitive models or generic filters are
+needed anywhere.
+
+Tue 13th Oct 2026       Autoformalization/puiseux.ml [new file]
+
+Added an autoformalized proof of Puiseux's theorem, produced by Claude Opus
+5.5: for an algebraically closed field k of characteristic zero, the field
+of Puiseux series over k is algebraically closed
+(ALGEBRAICALLY_CLOSED_PUISEUX_RING). It is constructed as the fraction field
+of the direct limit of the rings k[[t^(1/d)]], and contains k[[t]] and a
+d-th root of t for every d > 0 (PUISEUX_RING_ROOTS_OF_T); that it is
+algebraic over k((t)) is not formalized. The proof is the classical
+Newton-Puiseux argument: after a Tschirnhaus shift and a Newton-polygon
+rescaling, the reduction mod t of a monic polynomial over k[[t]] has coprime
+factors, Hensel's lemma lifts them, induction on the degree gives a root in
+some k[[t^(1/d)]], and a general criterion passes to the fraction field.
+Characteristic zero is essential: in characteristic p, X^p - X - 1/t has no
+Puiseux series root.
+
+Mon 12th Oct 2026       Autoformalization/carleson.ml, Autoformalization/carleson_hunt.ml [new file]
+
+Added the Carleson-Hunt generalization of the autoformalized Carleson
+theorem, and at the same time streamlined the existing carleson.ml.
+
+The new carleson_hunt.ml, produced by Claude Opus 5.5, extends carleson.ml
+from L^2 to L^p: for every p > 1, the Fourier series of a 2pi-periodic
+function in L^p[-pi,pi] converges to it almost everywhere (theorem
+CARLESON_HUNT_THEOREM_ALL_P). This is sharp on the L^p scale: Kolmogorov
+constructed an integrable function whose Fourier series diverges almost
+everywhere (1923), and later one whose Fourier series diverges everywhere
+(1926), though almost everywhere convergence does hold for some classes
+between L^1 and the L^p spaces, e.g. Antonov's L log L log log log L. The
+case p >= 2 follows directly from CARLESON_THEOREM, and the main part of
+the file is the case 1 < p < 2 (CARLESON_HUNT_THEOREM). This uses a
+density-capped estimate with logarithmic loss for the tile model of the
+Carleson operator, applied to functions dominated by an indicator, after
+Lacey-Thiele and Grafakos-Tao-Terwilleger, with the near part of the tree
+energy controlled by a dyadic Calderon-Zygmund decomposition. The estimate
+is transferred to the truncated Carleson operator by the averaging argument
+of Fremlin's sections 286P-286T, giving restricted weak type (q,q) for 1 <
+q <= 2 uniformly in the truncation, and then weak type (p,p) by a dyadic
+level decomposition; almost everywhere convergence follows by a
+Banach-principle argument in which the L^2 theorem is applied to clamped
+truncations of f.
+
+The carleson.ml file was also streamlined, without changing its main
+results: unused lemmas removed, duplicates of library or earlier lemmas
+merged, special cases replaced by general forms (some of which now take the
+plain names, and some with L^1 rather than L^2 hypotheses so that
+carleson_hunt.ml can use them directly), near-duplicate proofs factored
+through common helper lemmas and the longest proofs restructured, giving
+about 20% less proof text; two lemmas clashing with Probability/ names got
+a CARLESON_ prefix; comments left over from lemmas deleted in the original
+release were removed and damaged comment layout repaired. Load times are
+essentially unchanged.
+
+Tue  6th Oct 2026       preterm.ml
+
+Added a fix from Balaji Rao to generalize the special handling of
+bound variables sharing the names of existing constants (controlled
+via ignore_constant_varstruct) so that it works properly even in
+the presence of type annotations.
+
+Fri  2nd Oct 2026       Help/passim
+
+Made several fixes to the Help files reported by Chris Walton, uncovered
+during the creation of HoLLean, a new project now available as
+https://github.com/hol-light-family/HolLean/.
+
+Sun  6th Sep 2026       Autoformalization/hilbert_waring.ml [new file], Autoformalization/planar_graph.ml [new file]
+
+Added two more fully autonomous formalizations.
+
+The hilbert_waring.ml formalization, produced by Claude Opus 4.8, proves
+Hilbert's solution of Waring's problem: for each positive exponent e there is
+a bound k(e) such that every natural number is a sum of k(e) e-th powers. The
+proof follows Linnik's elementary method as presented in Khinchin's "Three
+Pearls of Number Theory", chapter 3. It develops the difference-polynomial and
+fiber-counting induction behind Khinchin's fundamental lemma, obtains positive
+Schnirelmann density for a bounded sumset of e-th powers, and applies the
+existing Schnirelmann density-to-basis theorem.
+
+The planar_graph.ml formalization, produced by GPT-5.6-sol (xhigh), develops a
+general theory of finite simple planar graphs over an arbitrary vertex type,
+with edges represented as two-element sets and planarity defined using
+non-crossing arcs in the plane. It proves Fary's straight-line embedding
+theorem, equivalent recursive-triangulation and Euler-rotation
+characterizations of planarity, Euler's formula and the planar edge bound,
+Kuratowski's theorem in terms of K5 and K3,3 subdivisions, and Wagner's
+theorem in terms of the corresponding forbidden minors. It also supplies
+reusable results about graph minors, degrees and degeneracy, relabelling,
+components, closure operations and amalgamation. The proof of Fary's theorem
+follows the maximal-triangulation and recursive-disk approach in Jeff
+Erickson's "Planar Graphs" notes, itself following de Fraysseix, Pach and
+Pollack. The Kuratowski development uses rotation systems, Thomassen's
+contractible-edge theorem and separator induction.
+
+Tue  1st Sep 2026       Makefile, pa_j/chooser.sh, pa_j/pa_j_8.04.00.ml [renamed]
+
+Adopted a simplification and generalization of the pa_j selection for
+camlp5 contributed by Matthias Kannwischer. In fact the same file
+pa_j/pa_j_8.04.00.ml works for many OCaml versions including 5.5.
+
+Mon 31st Aug 2026       mcp/passim
+
+Adopted an update from Sanketh Menda with a more flexible version of the MCP
+server's "hol_restart", enhancing it from a bare kill/restart into a
+config-aware restart, so an agent editing an underlying source file can
+refresh its environment without dropping the session.
+
+Mon 31st Aug 2026       Library/records.ml
+
+Adopted an update from June Lee to make "define_record_type" idempotent,
+i.e. to allow "benign redefinition" as with other comparable definitional
+principles.
+
 Sun 16th Aug 2026       Multivariate/realanalysis.ml, Multivariate/lpspaces.ml, 100/fourier.ml, Autoformalization/fifteen_theorem.ml [new file], Autoformalization/carleson.ml [new file], Autoformalization/fourier_transform.ml [new file]
 
 Added two more substantial fully autonomous formalizations.
