@@ -16,7 +16,9 @@ MODULE_RENAMES = {
     'TextIO': 'Text_io',
     'Word8Array': 'Word8_array',
     'CommandLine': 'Command_line',
-    'PrettyPrinter': 'Pretty_printer'
+    'PrettyPrinter': 'Pretty_printer',
+    'AstSexp': 'Ast_sexp',
+    'SocketIO': 'Socket_io',
 }
 
 # Ignore any bindings that contain any of the following strings

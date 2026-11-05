@@ -7,7 +7,7 @@ mkdir -p candle/build
 cd candle/build
 
 # Get the 64-bit CakeML compiler from here:
-curl -OL https://cakeml.org/regression/artefacts/3286/cake-x64-64.tar.gz
+curl -OL https://cakeml.org/regression/artefacts/3660/cake-x64-64.tar.gz
 tar xvzf cake-x64-64.tar.gz --strip-components=1
 
 # By default, the CakeML compiler reserves a few kilobytes for constants and
