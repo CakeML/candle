@@ -37,13 +37,9 @@ how to do this. You can also run
     $ ./build-instructions.sh
 
 from the shell, which will download the CakeML compiler using curl, and patch
-it. After this, you can run Candle by writing either:
+it. After this, you can run Candle by writing:
 
-    $ ./cake --candle
-
-or:
-
-    $ ./candle
+    $ ./candle.sh
 
 from the shell. Then, load the HOL Light sources by writing:
 
@@ -59,7 +55,7 @@ omissions are:
 
 - the help system
 - the theorem database
-- metis and compute
+- connection-based automation
 
 Most proof scripts that contain tactic proofs will be accepted by Candle with no
 changes. However, because Candle runs on CakeML (not OCaml), there are some
