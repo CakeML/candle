@@ -2,6 +2,7 @@ HOLLIGHT:=./hol.sh
 
 STANDALONE_EXAMPLES:=\
 	Library/agm \
+	Library/apery \
 	Library/bdd \
 	Examples/bdd_examples \
 	Library/binary \
@@ -14,6 +15,7 @@ STANDALONE_EXAMPLES:=\
 	Examples/borsuk \
 	Examples/brunn_minkowski \
 	Library/card \
+	Autoformalization/carleson \
 	Examples/combin \
 	Examples/complexpolygon \
 	Examples/cong \
@@ -24,6 +26,7 @@ STANDALONE_EXAMPLES:=\
 	Examples/dlo \
 	Examples/doomsday \
 	Library/fieldtheory \
+	Autoformalization/fifteen_theorem \
 	Library/floor \
 	Examples/forster \
 	Examples/gcdrecurrence \
@@ -62,12 +65,14 @@ STANDALONE_EXAMPLES:=\
 	Examples/rectypes \
 	Library/ringtheory \
 	Examples/safetyliveness \
+	Autoformalization/sarkovskii \
 	Examples/schnirelmann \
 	Examples/solovay \
 	Examples/sos \
 	Examples/ste \
 	Examples/sylvester_gallai \
 	Library/symmetric_group \
+	Autoformalization/three_squares \
 	Examples/vitali \
 	Library/wo \
 	Library/words \
@@ -106,6 +111,7 @@ EXTENDED_EXAMPLES:=\
 	RichterHilbertAxiomGeometry/HilbertAxiom_read \
 	Rqe/make \
 	Unity/make \
+	WZ/make \
 	Multivariate/cross \
 	Multivariate/cvectors \
 	Multivariate/flyspeck \
@@ -278,9 +284,9 @@ $(LOGDIR)/TacticTrace/make-test.ready:
 	@mkdir -p $(LOGDIR)/$$(dirname TacticTrace/make-test)
 	@echo '### Running TacticTrace/Makefile'
 	@$(MAKE) clean --quiet -C TacticTrace
-	@$(MAKE) --quiet -C TacticTrace
-	@cd TacticTrace && ./build-hol-kernel.sh
-	@$(MAKE) test --quiet -C TacticTrace > $(LOGDIR)/TacticTrace/make-test 2>&1
+	@$(MAKE) --quiet -C TacticTrace > $(LOGDIR)/TacticTrace/make-test 2>&1
+	@export HOLLIGHT_DIR=`$(HOLLIGHT) -dir` && cd TacticTrace && ./build-hol-kernel.sh >> $(LOGDIR)/TacticTrace/make-test 2>&1
+	@$(MAKE) test --quiet -C TacticTrace >> $(LOGDIR)/TacticTrace/make-test 2>&1
 	@cat TacticTrace/examples/*.hollog >> $(LOGDIR)/TacticTrace/make-test
 	@touch $(LOGDIR)/TacticTrace/make-test.ready
 
