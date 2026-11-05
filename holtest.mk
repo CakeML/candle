@@ -2,7 +2,7 @@ HOLLIGHT:=./hol.sh
 
 STANDALONE_EXAMPLES:=\
 	Library/agm \
-	Library/apery \
+	Examples/apery \
 	Library/bdd \
 	Examples/bdd_examples \
 	Library/binary \
@@ -16,10 +16,12 @@ STANDALONE_EXAMPLES:=\
 	Examples/brunn_minkowski \
 	Library/card \
 	Autoformalization/carleson \
+	Autoformalization/carleson_hunt \
 	Examples/combin \
 	Examples/complexpolygon \
 	Examples/cong \
 	Examples/cooper \
+	Library/cyclotomic \
 	Examples/dickson \
 	Examples/digit_serial_methods \
 	Examples/division_algebras \
@@ -27,10 +29,14 @@ STANDALONE_EXAMPLES:=\
 	Examples/doomsday \
 	Library/fieldtheory \
 	Autoformalization/fifteen_theorem \
+	Library/finite_fields \
 	Library/floor \
 	Examples/forster \
+	Library/galois \
 	Examples/gcdrecurrence \
+	Autoformalization/godel_completeness \
 	Library/grouptheory \
+	Autoformalization/hilbert_waring \
 	Examples/harmonicsum \
 	Examples/hol88 \
 	Examples/holby \
@@ -55,14 +61,17 @@ STANDALONE_EXAMPLES:=\
 	Examples/padics \
 	Examples/pell \
 	Library/permutations \
+	Autoformalization/planar_graph \
 	Library/primitive \
 	Library/products \
 	Examples/prog \
 	Examples/prover9 \
 	Examples/pseudoprime \
+	Autoformalization/puiseux \
 	Library/q \
-	Library/rabin_test \
 	Examples/rectypes \
+	Library/ring_det \
+	Library/ring_groups \
 	Library/ringtheory \
 	Examples/safetyliveness \
 	Autoformalization/sarkovskii \
@@ -126,8 +135,7 @@ EXTENDED_EXAMPLES:=\
 	RichterHilbertAxiomGeometry/Topology \
 	RichterHilbertAxiomGeometry/TarskiAxiomGeometry_read \
 	Functionspaces/make \
-	Formal_ineqs/make-ineqs \
-	TacticTrace/make-test
+	Formal_ineqs/make-ineqs
 
 GREAT_100_THEOREMS:= \
 	100/arithmetic_geometric_mean \
@@ -194,6 +202,7 @@ GREAT_100_THEOREMS:= \
 	100/transcendence \
 	100/triangular \
 	100/two_squares \
+	100/unsolvability \
 	100/wilson
 
 
@@ -238,6 +247,14 @@ $(LOGDIR)/Library/rstc-reduct.ready:
 	@(echo 'loadt "Library/rstc.ml";;'; echo 'loadt "Examples/reduct.ml";;') | (time $(HOLLIGHT)) >> $(LOGDIR)/Library/rstc-reduct 2>&1
 	@touch $(LOGDIR)/Library/rstc-reduct.ready
 
+$(LOGDIR)/Mizarlight/make.ready:
+	@mkdir -p $(LOGDIR)/$$(dirname Mizarlight/make)
+	@echo '### Loading Mizarlight/make.ml'
+	@echo '### Loading Mizarlight/make.ml' > $(LOGDIR)/Mizarlight/make
+	$(MAKE) -C Mizarlight pa_f.cmo
+	@echo 'loadt "Mizarlight/make.ml";;' | (time $(HOLLIGHT)) >> $(LOGDIR)/Mizarlight/make 2>&1
+	@touch $(LOGDIR)/Mizarlight/make.ready
+
 $(LOGDIR)/miz3/make-test.ready:
 	@mkdir -p $(LOGDIR)/$$(dirname miz3/make-test)
 	@echo '### Loading miz3/make.ml, miz3/test.ml (twice)'
@@ -279,16 +296,6 @@ $(LOGDIR)/Cadical/make-test.ready:
 		echo '### Error: skip Cadical/make.ml, Cadical/test.ml because cadical is not available' > $(LOGDIR)/Cadical/make-test ; \
 	fi
 	@touch $(LOGDIR)/Cadical/make-test.ready
-
-$(LOGDIR)/TacticTrace/make-test.ready:
-	@mkdir -p $(LOGDIR)/$$(dirname TacticTrace/make-test)
-	@echo '### Running TacticTrace/Makefile'
-	@$(MAKE) clean --quiet -C TacticTrace
-	@$(MAKE) --quiet -C TacticTrace > $(LOGDIR)/TacticTrace/make-test 2>&1
-	@export HOLLIGHT_DIR=`$(HOLLIGHT) -dir` && cd TacticTrace && ./build-hol-kernel.sh >> $(LOGDIR)/TacticTrace/make-test 2>&1
-	@$(MAKE) test --quiet -C TacticTrace >> $(LOGDIR)/TacticTrace/make-test 2>&1
-	@cat TacticTrace/examples/*.hollog >> $(LOGDIR)/TacticTrace/make-test
-	@touch $(LOGDIR)/TacticTrace/make-test.ready
 
 # Recall that $* is the stem matched by the %
 $(LOGDIR)/%.ready:
