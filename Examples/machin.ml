@@ -111,7 +111,7 @@ let BOUND_SUMPROD_RULE =
         MATCH_MP pth (CONJ th1 th2)
     with Failure _ ->
         PART_MATCH rator pth_triv tm in
-  BOUND_SUMPROD_RULE;;
+  (BOUND_SUMPROD_RULE: goal -> thm);;
 
 let BOUND_SUMPROD_TAC =
   let tac =

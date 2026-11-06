@@ -630,22 +630,24 @@ let IMP_RES_THEN,RES_THEN =
       let matchfn = (fun (a,b,c) -> b,c) o
                     term_match [] (fst(dest_neg_imp(concl sth))) in
          fun th -> NOT_MP (INST_TY_TERM (matchfn (concl th)) sth) th in
-  let check st l = (if l = [] then failwith st else l) in
+  (* Candle: no let-polymorphism *)
+  let check_thm st l : thm list = (if l = [] then failwith st else l) in
+  let check_tac st l : tactic list = (if l = [] then failwith st else l) in
   let IMP_RES_THEN ttac impth =
       let ths = try RES_CANON impth with Failure _ -> failwith "IMP_RES_THEN: no implication" in
       ASSUM_LIST
        (fun asl ->
         let l = itlist (fun th -> (@) (mapfilter (MATCH_MP th) asl)) ths [] in
-        let res = check "IMP_RES_THEN: no resolvents " l in
-        let tacs = check "IMP_RES_THEN: no tactics" (mapfilter ttac res) in
+        let res = check_thm "IMP_RES_THEN: no resolvents " l in
+        let tacs = check_tac "IMP_RES_THEN: no tactics" (mapfilter ttac res) in
         EVERY tacs) in
   let RES_THEN ttac (asl,g) =
       let asm = map snd asl in
       let ths = itlist (@) (mapfilter RES_CANON asm) [] in
-      let imps = check "RES_THEN: no implication" ths in
+      let imps = check_thm "RES_THEN: no implication" ths in
       let l = itlist (fun th -> (@) (mapfilter (MATCH_MP th) asm)) imps [] in
-      let res = check "RES_THEN: no resolvents " l in
-      let tacs = check "RES_THEN: no tactics" (mapfilter ttac res) in
+      let res = check_thm "RES_THEN: no resolvents " l in
+      let tacs = check_tac "RES_THEN: no tactics" (mapfilter ttac res) in
           EVERY tacs (asl,g) in
   IMP_RES_THEN,RES_THEN;;
 

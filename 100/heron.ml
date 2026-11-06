@@ -14,7 +14,7 @@ let SQRT_ELIM_TAC =
   let sqrt_tm = `sqrt:real->real` in
   let is_sqrt tm = is_comb tm && rator tm = sqrt_tm in
   fun (asl,w) ->
-    let stms = setify(find_terms is_sqrt w) in
+    let stms = setify Term.(<) (find_terms is_sqrt w) in
     let gvs = map (genvar o type_of) stms in
     (MAP_EVERY (MP_TAC o C SPEC SQRT_POW_2 o rand) stms THEN
      EVERY (map2 (fun s v -> SPEC_TAC(s,v)) stms gvs)) (asl,w);;

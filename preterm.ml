@@ -55,14 +55,21 @@ let override_interface (sym,tm) =
   let interface = filter ((<>)sym o fst) (!the_interface) in
   the_interface := (sym,namty)::interface;;
 
-let overload_interface (sym,tm) =
+(* Candle: adding HOL4's inferior option for overloads, which makes the
+   overload the last choice. *)
+let overload_interface_core inferior (sym,tm) =
   let gty = try assoc sym (!the_overload_skeletons) with Failure _ ->
             failwith ("symbol \""^sym^"\" is not overloadable") in
   let (name,ty) as namty = try dest_const tm with Failure _ -> dest_var tm in
   if not (can (type_match gty ty) [])
   then failwith "Not an instance of type skeleton" else
   let interface = filter ((<>) (sym,namty)) (!the_interface) in
-  the_interface := (sym,namty)::interface;;
+  the_interface := (if inferior then interface @ [(sym,namty)]
+                    else (sym,namty)::interface);;
+
+let overload_interface = overload_interface_core false;;
+
+let inferior_overload_interface = overload_interface_core true;;
 
 let prioritize_overload ty =
   do_list
