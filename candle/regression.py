@@ -471,8 +471,8 @@ def main():
         help="Number of parallel workers (default: CPU count - 1)",
     )
     parser.add_argument(
-        "--timeout", type=int, default=600,
-        help="Timeout in seconds for each #use load, including hol.ml (default: 600)",
+        "--timeout", type=int, default=3600,
+        help="Max seconds without a new top-level binding or load event (default: 3600)",
     )
 
     args = parser.parse_args()
