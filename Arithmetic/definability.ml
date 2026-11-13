@@ -368,12 +368,12 @@ let OBJECTIFY =
       if is_forall fm then
         let x,bod = dest_forall fm in
         let n = mk_small_numeral
-          (itlist (max o dest_small_numeral) (ran env) 0 + 1) in
+          (itlist (max o dest_small_numeral) (ran env Term.compare) 0 + 1) in
         mk_comb(mk_comb(oall_tm,n),objectify_formula ((x |-> n) env) bod)
       else if is_exists fm then
         let x,bod = dest_exists fm in
         let n = mk_small_numeral
-          (itlist (max o dest_small_numeral) (ran env) 0 + 1) in
+          (itlist (max o dest_small_numeral) (ran env Term.compare) 0 + 1) in
         mk_comb(mk_comb(oex_tm,n),objectify_formula ((x |-> n) env) bod)
       else if is_iff fm then objectify2 objectify_formula oiff_tm env fm
       else if is_imp fm then objectify2 objectify_formula oimp_tm env fm
@@ -388,7 +388,8 @@ let OBJECTIFY =
      let ptm,tm = dest_eq(snd(strip_forall(concl th))) in
      let vs = filter (fun v -> type_of v = num_ty) (snd(strip_comb ptm)) in
      let ns = 1--(length vs) in
-     let env = itlist2 (fun v n -> v |-> mk_small_numeral n) vs ns undefined in
+     let env = itlist2 (fun v n -> v |-> mk_small_numeral n) vs ns
+                    (undefined Term.compare) in
      let otm = objectify_formula env tm in
      let vs' = map (fun v -> mk_var(fst(dest_var v),term_ty)) vs in
      let stm = itlist2
