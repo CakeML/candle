@@ -197,21 +197,21 @@ let compute defn_eqs tm =
 (* We'll install some overloads to make it easier to build cexps.             *)
 (* -------------------------------------------------------------------------- *)
 
-make_overloadable "lessc"   `:A->A->A`;;
-make_overloadable "divc"    `:A->A->A`;;
-make_overloadable "modc"    `:A->A->A`;;
-make_overloadable "ifc"     `:A->A->A->A`;;
-make_overloadable "fstc"    `:A->A`;;
-make_overloadable "ispairc" `:A->A`;;
-make_overloadable "sndc"    `:A->A`;;
-make_overloadable "numc"    `:num->A`;;
-make_overloadable "pairc"   `:A->A->A`;;
-make_overloadable "eqc"     `:A->A->A`;;
+make_overloadable "LTc"     `:A->A->A`;;
+make_overloadable "DIVc"    `:A->A->A`;;
+make_overloadable "MODc"    `:A->A->A`;;
+make_overloadable "IFc"     `:A->A->A->A`;;
+make_overloadable "FSTc"    `:A->A`;;
+make_overloadable "ISPAIRc" `:A->A`;;
+make_overloadable "SNDc"    `:A->A`;;
+make_overloadable "NUMc"    `:num->A`;;
+make_overloadable "PAIRc"   `:A->A->A`;;
+make_overloadable "EQc"     `:A->A->A`;;
 
-parse_as_infix("lessc",(12,"right"));;
-parse_as_infix("divc",(22,"left"));;
-parse_as_infix("modc",(22,"left"));;
-parse_as_infix("eqc",(12,"right"));;
+parse_as_infix("LTc",(12,"right"));;
+parse_as_infix("DIVc",(22,"left"));;
+parse_as_infix("MODc",(22,"left"));;
+parse_as_infix("EQc",(12,"right"));;
 
 (* Use inferior overload to make sure that parsing in HOL Light files is
    unaffected. *)
@@ -219,16 +219,16 @@ do_list inferior_overload_interface
  ["+",`Cexp_add`;
   "-",`Cexp_sub`;
   "*",`Cexp_mul`;
-  "lessc",`Cexp_less`;
-  "divc",`Cexp_div`;
-  "modc",`Cexp_mod`;
-  "ifc", `Cexp_if`;
-  "fstc", `Cexp_fst`;
-  "sndc", `Cexp_snd`;
-  "numc", `Cexp_num`;
-  "ispairc", `Cexp_ispair`;
-  "pairc", `Cexp_pair`;
-  "eqc", `Cexp_eq`;
+  "LTc",`Cexp_less`;
+  "DIVc",`Cexp_div`;
+  "MODc",`Cexp_mod`;
+  "IFc", `Cexp_if`;
+  "FSTc", `Cexp_fst`;
+  "SNDc", `Cexp_snd`;
+  "NUMc", `Cexp_num`;
+  "ISPAIRc", `Cexp_ispair`;
+  "PAIRc", `Cexp_pair`;
+  "EQc", `Cexp_eq`;
   ];;
 
 (* -------------------------------------------------------------------------- *)
@@ -236,7 +236,7 @@ do_list inferior_overload_interface
 (* -------------------------------------------------------------------------- *)
 
 let cexp_if = prove (
-  `Cexp_if n p q = if ~(n = numc 0) then p else q`,
+  `Cexp_if n p q = if ~(n = NUMc 0) then p else q`,
   COND_CASES_TAC THEN ASM_REWRITE_TAC [cexp_if_def; ONE] THEN
   POP_ASSUM MP_TAC THEN
   STRUCT_CASES_TAC (SPEC `n:cval` (cases "cval")) THEN
@@ -245,9 +245,9 @@ let cexp_if = prove (
   REWRITE_TAC [NOT_SUC; SUC_INJ; cexp_if_def]);;
 
 let cval_size_def = define
-  `(cval_size (numc n) = 1) /\
-   (cval_size (pairc p q) = 1 + cval_size p + cval_size q)`;;
+  `(cval_size (NUMc n) = 1) /\
+   (cval_size (PAIRc p q) = 1 + cval_size p + cval_size q)`;;
 
 let cval_sum_size_def = define
-  `(cval_sum_size (numc n) = n) /\
-   (cval_sum_size (pairc p q) = 1 + cval_sum_size p + cval_sum_size q)`;;
+  `(cval_sum_size (NUMc n) = n) /\
+   (cval_sum_size (PAIRc p q) = 1 + cval_sum_size p + cval_sum_size q)`;;

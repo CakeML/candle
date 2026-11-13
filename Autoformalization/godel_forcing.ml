@@ -2485,8 +2485,7 @@ let ECHECK_MEM = prove
   MP_TAC(SPECL [`D:A->bool`;`E:A->A->bool`;`onebee:A`;`a:A`;`cd:A`;`pp:A`]
         ECHECKTOWER_VALUE) THEN
   ASM_REWRITE_TAC[] THEN
-  INTRO_TAC "@gacc w x2 img. gaccD wD x2D imgD gaccch domn pairx subxw \
-             imgch" THEN
+  INTRO_TAC "@gacc w x2 img. gaccD wD x2D imgD gaccch domn pairx subxw imgch" THEN
   SUBGOAL_THEN `x2:A = x /\ img:A = v`
     (CONJUNCTS_THEN2 SUBST_ALL_TAC SUBST_ALL_TAC) THENL
    [MP_TAC(SPECL [`D:A->bool`;`E:A->A->bool`;`x2:A`;`img:A`;`x:A`;`v:A`;`pp:A`]
@@ -3354,8 +3353,7 @@ let GOODCHECK_STEP = prove
   MP_TAC(SPECL [`D:A->bool`;`E:A->A->bool`;`onebee:A`;`d:A`;`zd:A`;`pp:A`]
         ECHECKTOWER_VALUE) THEN
   ASM_REWRITE_TAC[] THEN
-  INTRO_TAC "@gacc w x2 img. gaccD wD x2D imgD gaccch domn pairx subxw \
-             imgch" THEN
+  INTRO_TAC "@gacc w x2 img. gaccD wD x2D imgD gaccch domn pairx subxw imgch" THEN
   SUBGOAL_THEN `x2:A = x /\ img:A = vv`
     (CONJUNCTS_THEN2 SUBST_ALL_TAC SUBST_ALL_TAC) THENL
    [MP_TAC(SPECL
@@ -6129,8 +6127,7 @@ let EBVBAD_LEAST = prove
                     ~(z = z0)
                     ==> emlex D E z0 z)`,
   REPEAT GEN_TAC THEN
-  INTRO_TAC "zf BD wD bn RGD funRG h look RGmem sIND sIND2 sEQD sEQD2 \
-             @ua va pra. praD vD prD uw vw oppr h2" THEN
+  INTRO_TAC "zf BD wD bn RGD funRG h look RGmem sIND sIND2 sEQD sEQD2 @ua va pra. praD vD prD uw vw oppr h2" THEN
   (* -- small rank/pair facts, established BEFORE the big bad-set        *)
   (* -- characterization Sc enters the assumptions (Sc would make MESON  *)
   (* -- diverge on its 5-existential biconditional RHS)                  *)
@@ -8322,8 +8319,7 @@ let EPRODK_ENUM_CLEAN = prove
   REPEAT STRIP_TAC THEN
   MP_TAC(SPECL [`D:A->bool`; `E:A->A->bool`; `k:A`] EPRODK_ENUM) THEN
   ASM_REWRITE_TAC[] THEN
-  INTRO_TAC "@q r d f0. qIN qc rIN rc dIN dord fIN fac fval fontod finj \
-             fontoq" THEN
+  INTRO_TAC "@q r d f0. qIN qc rIN rc dIN dord fIN fac fval fontod finj fontoq" THEN
   SUBGOAL_THEN
    `!z z'. z IN D /\ z' IN D /\ erel D (E:A->A->bool) r z z' ==>
     ~erel D E r z' z`
@@ -11537,8 +11533,7 @@ let CROSS_W_AGREE_G = prove
     MP_TAC(ISPECL [`D:A->bool`; `E:A->A->bool`; `B:A`; `w1:A`; `RG:A`;
       `sIN:A`; `sIN':A`; `sEQ:A`; `sEQ':A`] EBVBAD_LEAST) THEN
     ANTS_TAC THENL [ASM_REWRITE_TAC[]; ALL_TAC] THEN
-    INTRO_TAC "@u0 v0 ru0 rv0 pr0 z0. u0D v0D ru0D rv0D pr0D z0D u0w1 \
-               v0w1 h h2 oppr0 opz0 bad Mc" THEN
+    INTRO_TAC "@u0 v0 ru0 rv0 pr0 z0. u0D v0D ru0D rv0D pr0D z0D u0w1 v0w1 h h2 oppr0 opz0 bad Mc" THEN
     SUBGOAL_THEN `eordinal D (E:A->A->bool) ru0` ASSUME_TAC THENL
      [FIRST_ASSUM(ACCEPT_TAC o MATCH_MP EBNRANK_ORDINAL); ALL_TAC] THEN
     SUBGOAL_THEN `eordinal D (E:A->A->bool) rv0` ASSUME_TAC THENL
@@ -14457,8 +14452,7 @@ let EBV_EQ_GLB_STAGE = prove
             ebimp D E B leq qy eyu c
           ==> erel D E leq w0 c)
       ==> erel D E leq w0 z`,
-  REPEAT GEN_TAC THEN INTRO_TAC "zf cba BD aD orda h wD uD vD uw vw h2 \
-                                 h3 w0D w0B hu hv" THEN
+  REPEAT GEN_TAC THEN INTRO_TAC "zf cba BD aD orda h wD uD vD uw vw h2 h3 w0D w0B hu hv" THEN
   MP_TAC(ISPECL [`D:A->bool`;`E:A->A->bool`;`B:A`;`leq:A`;`sIN:A`;`u:A`;`v:A`;
     `z:A`;`w0:A`] EBVEQ_GLB) THEN
   ANTS_TAC THENL
@@ -17863,8 +17857,7 @@ let HOLDS_CFAILS_FORM =
     ASM_SIMP_TAC[VALMOD_BASIC; VALMOD_OTHER; ARITH_EQ]
   and use_tac =
     REWRITE_TAC[HOLDS_EX] THEN EQ_TAC THENL
-     [INTRO_TAC "@z20. z20D @z21. z21D @z22. z22D @z23. z23D @z24. \
-                 z24D h" THEN
+     [INTRO_TAC "@z20. z20D @z21. z21D @z22. z22D @z23. z23D @z24. z24D h" THEN
       MAP_EVERY EXISTS_TAC [`z20:A`;`z21:A`;`z22:A`;`z23:A`;`z24:A`] THEN
       ASM_REWRITE_TAC[] THEN
       USE_THEN "blk"(fun b -> MP_TAC(SPECL
@@ -32525,9 +32518,7 @@ let EBV_REPL_CORE =
   REPEAT GEN_TAC THEN
   ABBREV_TAC `vm = (y |-> tt) (v:num->A)` THEN
   ABBREV_TAC `aa = (v:num->A) a` THEN
-  INTRO_TAC "zf cba BD leqD val h xnea xney ynez aney znfv ttD bntt dmD \
-             dmch ddstarD ddbn ach onebeeD onebeeB toponebee cnD funcn \
-             cnap KD KB ebvin meet" THEN
+  INTRO_TAC "zf cba BD leqD val h xnea xney ynez aney znfv ttD bntt dmD dmch ddstarD ddbn ach onebeeD onebeeB toponebee cnD funcn cnap KD KB ebvin meet" THEN
   SUBGOAL_THEN `ebalg D (E:A->A->bool) B leq` ASSUME_TAC THENL
    [ASM_MESON_TAC[ECBA_IMP_BALG]; ALL_TAC] THEN
   SUBGOAL_THEN `eporder D (E:A->A->bool) B leq` ASSUME_TAC THENL
@@ -39697,8 +39688,7 @@ let MIX_BNAME = prove
                  holds D E ((20 |-> w)((16 |-> p) v)) phi_mixval))
      ==> bname D E B c`,
   REPEAT GEN_TAC THEN
-  INTRO_TAC "modl ecba BD leqD lamD lamord ddD ddst WD Wch val v1 v2 cD \
-             isf cch" THEN
+  INTRO_TAC "modl ecba BD leqD lamD lamord ddD ddst WD Wch val v1 v2 cD isf cch" THEN
   MP_TAC(ISPECL [`D:A->bool`;`E:A->A->bool`;`B:A`;`lam:A`;`dd:A`]
          EBNSTAGE_CHAR) THEN
   ANTS_TAC THENL [ASM_REWRITE_TAC[]; ALL_TAC] THEN
@@ -40497,8 +40487,7 @@ let EOPAIR_FST_DET = prove
      eopair D E u w z /\ eopair D E u0 w0 z
      ==> u = u0`,
   REPEAT GEN_TAC THEN REWRITE_TAC[eopair] THEN
-  INTRO_TAC "modl wD u0D w0D (@s p. puus puwp pspz) @s0 p0. pu0s0 pu0p0 \
-             ps0p0z" THEN
+  INTRO_TAC "modl wD u0D w0D (@s p. puus puwp pspz) @s0 p0. pu0s0 pu0p0 ps0p0z" THEN
   SUBGOAL_THEN `(s:A) IN D /\ (p:A) IN D /\ (s0:A) IN D /\ (p0:A) IN D`
     STRIP_ASSUME_TAC THENL
    [ASM_MESON_TAC[EPAIR_IN]; ALL_TAC] THEN
@@ -40583,8 +40572,7 @@ let MIX_EQ_GE = prove
      z IN D /\ ebv_eq D E B leq c q0 z
      ==> erel D E leq wq0 z`,
   REPEAT GEN_TAC THEN
-  INTRO_TAC "modl ecba BD leqD ddD gD WD val v1 v2 v5 v15 cD bnc cch \
-             q0D q0dd bnq0 wq0D wq0B gq0 wcl disj zD eqz" THEN
+  INTRO_TAC "modl ecba BD leqD ddD gD WD val v1 v2 v5 v15 cD bnc cch q0D q0dd bnq0 wq0D wq0B gq0 wcl disj zD eqz" THEN
   SUBGOAL_THEN `eporder D (E:A->A->bool) B leq` (LABEL_TAC "epo") THENL
    [ASM_MESON_TAC[ECBA_IMP_BALG; EBALG_IMP_PORDER]; ALL_TAC] THEN
   SUBGOAL_THEN `ebalg D (E:A->A->bool) B leq` (LABEL_TAC "eba") THENL
@@ -49604,8 +49592,7 @@ let CCC_RO_IMGANTI = prove
       esubset D E S P
       ==> eantichain D E P leqp S`,
   REPEAT GEN_TAC THEN
-  INTRO_TAC "mdl leqp PD leqpD ros ebp einc aD antibp ffD inj idx SD \
-             Smem SsubP" THEN
+  INTRO_TAC "mdl leqp PD leqpD ros ebp einc aD antibp ffD inj idx SD Smem SsubP" THEN
   REWRITE_TAC[eantichain] THEN REPEAT CONJ_TAC THENL
    [USE_THEN "SD" ACCEPT_TAC;
     USE_THEN "SsubP" ACCEPT_TAC;
@@ -52463,8 +52450,7 @@ let CCC_COHEN_MODULO_DELTA = prove
                          ==> einter D E dal dbe r))
      ==> eccc D E P leqp`,
   REPEAT GEN_TAC THEN
-  INTRO_TAC "mdl elm omega cross fintw cp leqpP a1D carda1 oma1 a1min \
-             delta" THEN
+  INTRO_TAC "mdl elm omega cross fintw cp leqpP a1D carda1 oma1 a1min delta" THEN
   SUBGOAL_THEN `(tw:A) IN D` (LABEL_TAC "twD") THENL
    [USE_THEN "fintw" (ACCEPT_TAC o CONJUNCT1 o REWRITE_RULE[efin]);
     ALL_TAC] THEN
@@ -59810,8 +59796,7 @@ let HOLDS_MEMCOLLAPSE_FORM = prove
       ASM_SIMP_TAC[VALMOD_BASIC; VALMOD_OTHER; ARITH_EQ]; ALL_TAC] THEN
     REWRITE_TAC[HOLDS_AND] THEN ASM_REWRITE_TAC[]; ALL_TAC] THEN
   REWRITE_TAC[HOLDS_EX] THEN EQ_TAC THENL
-   [INTRO_TAC "@bet. betD @nn. nnD @pnb. pnbD @ckp. ckpD @mv. mvD @d. \
-               dD h" THEN
+   [INTRO_TAC "@bet. betD @nn. nnD @pnb. pnbD @ckp. ckpD @mv. mvD @d. dD h" THEN
     SUBGOAL_THEN
      `eopair D (E:A->A->bool) bet nn ((v:num->A) 0) /\ eopair D E nn bet pnb /\
       echeck D E (v 98) pnb ckp /\ ebv_in D E (v 2) (v 5) ckp (v 90) mv /\
@@ -64224,8 +64209,7 @@ let COHEN_REALNAME_EXISTS = prove
      curry the inner `r IN D /\ erel ... ==>` inside the graph char,
      breaking the
      ACCEPT/match of "graph" against EMBF_ISFUN's hyp. *)
-  INTRO_TAC "zf h omom OND embfD graph etot crossii crossci alphaD \
-             alphaiibase onetwD onetwtw" THEN
+  INTRO_TAC "zf h omom OND embfD graph etot crossii crossci alphaD alphaiibase onetwD onetwtw" THEN
   SUBGOAL_THEN `(om:A) IN D` ASSUME_TAC THENL
    [ASM_MESON_TAC[EOMEGA_IN]; ALL_TAC] THEN
   (* eisfun embf, for apply-uniqueness *)
@@ -66966,8 +66950,7 @@ let HOLDS_OPNCELL_FORM = prove
     ASM_SIMP_TAC[HOLDS_AND; HOLDS_OPAIR_FORM; HOLDS_PAIR_FORM] THEN
     ASM_SIMP_TAC[VALMOD_BASIC; VALMOD_OTHER; ARITH_EQ]; ALL_TAC] THEN
   REWRITE_TAC[opncell_form; HOLDS_EX] THEN EQ_TAC THENL
-   [INTRO_TAC "@paa. paaD @pab. pabD @sa. saD @sab. sabD @psa. psaD \
-               @psab. psabD +" THEN
+   [INTRO_TAC "@paa. paaD @pab. pabD @sa. saD @sab. sabD @psa. psaD @psab. psabD +" THEN
     USE_THEN "body" (fun th -> MP_TAC(SPECL
       [`paa:A`;`pab:A`;`sa:A`;`sab:A`;`psa:A`;`psab:A`] th)) THEN
     ANTS_TAC THENL [ASM_REWRITE_TAC[]; ALL_TAC] THEN
@@ -67076,8 +67059,7 @@ let HOLDS_HNAME_FORM = prove
                  ARITH_EQ] THEN
     ASM_SIMP_TAC[VALMOD_BASIC; VALMOD_OTHER; ARITH_EQ]; ALL_TAC] THEN
   REWRITE_TAC[hname_form; HOLDS_EX] THEN EQ_TAC THENL
-   [INTRO_TAC "@xi. xiD @alpha. alphaD @xic. xicD @rdot. rdotD @op. opD \
-               @w. wD @cpc. cpcD +" THEN
+   [INTRO_TAC "@xi. xiD @alpha. alphaD @xic. xicD @rdot. rdotD @op. opD @w. wD @cpc. cpcD +" THEN
     USE_THEN "body" (fun th -> MP_TAC(SPECL
       [`xi:A`;`alpha:A`;`xic:A`;`rdot:A`;`op:A`;`w:A`;`cpc:A`] th)) THEN
     ANTS_TAC THENL [ASM_REWRITE_TAC[]; ALL_TAC] THEN

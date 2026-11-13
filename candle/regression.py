@@ -13,8 +13,9 @@ file under /tmp (via tempfile.mkstemp), e.g. /tmp/candle-100_arithmetic-XXXX.log
 
 Two suites are available:
   * REGRESSION - a small subset, run by default.
-  * TOP100     - the full "Top 100 theorems" set (from holtest.mk's
-                 GREAT_100_THEOREMS), run with --top100.
+  * TOP100     - the full "Top 100 theorems" set (holtest.mk's
+                 GREAT_100_THEOREMS plus the remaining HOL Light entries on
+                 Freek Wiedijk's list), run with --top100.
 """
 import sys
 import os
@@ -90,7 +91,9 @@ REGRESSION = [
     _t("100/cayley_hamilton"),
 ]
 
-# The full "Top 100 theorems" suite, mirroring GREAT_100_THEOREMS in holtest.mk.
+# The full "Top 100 theorems" suite: GREAT_100_THEOREMS from holtest.mk, plus
+# the files needed to load every theorem Freek Wiedijk's list credits to HOL
+# Light (#23, Pythagorean triples, is not in this repo).
 # bertrand-primerecip is special: primerecip.ml depends on bertrand.ml, so both
 # are loaded (in order) in the same session.
 TOP100 = [
@@ -152,13 +155,22 @@ TOP100 = [
     _t("100/ratcountable"),
     _t("100/realsuncountable"),
     _t("100/reciprocity"),
+    _t("100/sqrt"),
     _t("100/stirling"),
     _t("100/subsequence"),
     _t("100/thales"),
     _t("100/transcendence"),
     _t("100/triangular"),
     _t("100/two_squares"),
+    _t("100/unsolvability"),
     _t("100/wilson"),
+    # Theorems on Freek Wiedijk's list proved outside 100/.
+    _t("4CT/make"),                              # 32 Four Colour Theorem
+    _t("Arithmetic/make"),                       # 6  Goedel incompleteness
+    _t("Autoformalization/godel_completeness"),  # 24 Independence of CH
+    _t("Autoformalization/puiseux"),             # 41 Puiseux's theorem
+    _t("Examples/pell"),                         # 39 Pell's equation
+    _t("Probability/clt"),                       # 47 CLT; also 62 (martingales.ml)
 ]
 
 # Lookup by name, so --test can reuse multi-file definitions (e.g. the
