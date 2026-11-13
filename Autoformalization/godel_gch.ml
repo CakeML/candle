@@ -57225,7 +57225,7 @@ let EFUNIMG_BWIT = prove
         (REWRITE_RULE[einj] (ASSUME `einj D (E:A->A->bool) ed dm kk`))))) THEN
       ASM_REWRITE_TAC[] THEN STRIP_TAC THEN ASM_REWRITE_TAC[];
       ASM_REWRITE_TAC[];
-      EXISTS_TAC `kw:A` THEN ASM_REWRITE_TAC[]];);;
+      EXISTS_TAC `kw:A` THEN ASM_REWRITE_TAC[]]);;
 
 let EFUNIMAGE_CARD_LE = prove
  (`!D (E:A->A->bool) kk dm ed f rng.
