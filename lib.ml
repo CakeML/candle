@@ -531,11 +531,9 @@ let mergesort ord =
 (* Common measure predicates to use with "sort".                             *)
 (* ------------------------------------------------------------------------- *)
 
-(*
-let increasing f x y = compare (f x) (f y) < 0;;
+let increasing cmp f x y = cmp (f x) (f y) < 0;;
 
-let decreasing f x y = compare (f x) (f y) > 0;;
-*)
+let decreasing cmp f x y = cmp (f x) (f y) > 0;;
 
 (* ------------------------------------------------------------------------- *)
 (* Polymorphic finite partial functions via Patricia trees.                  *)
@@ -566,6 +564,9 @@ let pp_func pk pv (Func (cmp, f)) =
   Pretty_printer.app_block "func"
     [Pretty_printer.pp_list (fun (k, v) ->
       Pretty_printer.tuple [pk k; pv v]) f];;
+
+(* Candle addition; used in Examples/sos.ml *)
+let _func_compare cmp (Func (_, f)) (Func (_, g)) = List.compare cmp f g;;
 
 (* ------------------------------------------------------------------------- *)
 (* Undefined function.                                                       *)

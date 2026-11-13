@@ -6,9 +6,9 @@ set -euo pipefail
 mkdir -p candle/build
 cd candle/build
 
-# Get the 64-bit CakeML compiler from here:
-curl -OL https://cakeml.org/regression/artefacts/3660/cake-x64-64.tar.gz
-tar xvzf cake-x64-64.tar.gz --strip-components=1
+# Get the x64 CakeML compiler from here:
+curl -OL https://cakeml.org/regression/artefacts/3682/cake-x64.tar.gz
+tar xvzf cake-x64.tar.gz --strip-components=1
 
 # By default, the CakeML compiler reserves a few kilobytes for constants and
 # code produced by the dynamic compiler. Using Candle requires setting these

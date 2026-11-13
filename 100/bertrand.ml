@@ -16,9 +16,10 @@ prioritize_real();;
 (* ------------------------------------------------------------------------- *)
 
 let num_of_float =
-  let p22 = ( ** ) 2.0 22.0
-  and p44 = ( ** ) 2.0 44.0
-  and p66 = ( ** ) 2.0 66.0
+  let fp2 = float_of_int 2
+  and p22 = ( ** ) fp2 (float_of_int 22)
+  and p44 = ( ** ) fp2 (float_of_int 44)
+  and p66 = ( ** ) fp2 (float_of_int 66)
   and q22 = pow2 22 and q44 = pow2 44 and q66 = pow2 66 in
   fun x ->
     let y0,n = frexp x in
@@ -28,7 +29,7 @@ let num_of_float =
     let y2 = p22 *. y1 -. float_of_int u1 in
     let u2 = int_of_float(y2 *. p22) in
     let y3 = p22 *. y2 -. float_of_int u2 in
-    if y3 <> 0.0 then failwith "num_of_float: inexactness!" else
+    if (y3 <> Float.zero) then failwith "num_of_float: inexactness!" else
     (num u0 // q22 +/ num u1 // q44 +/ num u2 // q66) */ pow2 n;;
 
 (* ------------------------------------------------------------------------- *)
@@ -1146,9 +1147,9 @@ let DOUBLE_CASES_RULE th =
   let m = dest_numeral (rand ant)
   and c = rat_of_term (lhand(lhand(rand cons))) in
   let x = float_of_num(m +/ num 1) in
-  let d = (4.0 *. log x +. 3.0) /. (x *. log 2.0) in
+  let d = ((float_of_int 4) *. log x +. (float_of_int 3)) /. (x *. log (float_of_int 2)) in
   let c' = c // num 2 +/ num 1 +/
-           (floor_num(num_of_float(1024.0 *. d)) +/ num 2) // num 1024 in
+           (floor_num(num_of_float((float_of_int 1024) *. d)) +/ num 2) // num 1024 in
   let c'' = max_num c c' in
   let tm = mk_forall
    (`n:num`,

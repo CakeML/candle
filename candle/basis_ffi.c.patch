@@ -1,11 +1,22 @@
 --- basis_ffi.c
 +++ basis_ffi.c
-@@ -203,8 +203,34 @@
+@@ -202,11 +202,6 @@
+   exit((int)a[0]);
  }
  
- void fficustom (unsigned char *c, long clen, unsigned char *a, long alen) {
+-void fficustom (unsigned char *c, long clen, unsigned char *a, long alen) {
 -  assert(0 <= alen);
 -  assert(0 <= clen);
+-}
+-
+ /* Double FFI */
+ typedef union {
+     double num;
+@@ -282,6 +277,47 @@
+     memcpy(a, d.bytes, sizeof d.bytes);
+ }
+ 
++void fficustom (unsigned char *c, long clen, unsigned char *a, long alen) {
 +  if (strcmp(c, "chdir") == 0) {
 +    assert(1 <= alen);
 +    a[0] = chdir(a) != 0;
@@ -31,9 +42,21 @@
 +    a[0] = 0;
 +    a[1] = WEXITSTATUS(ret);
 +    return;
++  } else if (strcmp(c, "frexp") == 0) {
++    assert(alen >= 16);
++    double_bytes d;
++    int_bytes i;
++    int exp;
++    memcpy(d.bytes, a, sizeof d.bytes);
++    d.num = frexp(d.num, &exp);
++    i.num = exp;  // int -> int64_t
++    memcpy(a, d.bytes, sizeof d.bytes);
++    memcpy(&a[8], i.bytes, sizeof i.bytes);
 +  } else {
 +    return;  // Ignore unknown command
 +  }
- }
- 
- /* Double FFI */
++}
++
+ #ifdef __linux__
+ /* Socket FFI (Unix domain sockets) */
+ /* Descriptors are passed as 8-byte integers (see int_to_byte8). Unless
