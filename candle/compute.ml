@@ -56,7 +56,7 @@ let cexp_less_def = define
 
 let cexp_if_def = define
   `(Cexp_if (Cexp_num (SUC m)) (p1: cval) (q1: cval) = p1) /\
-   (Cexp_if (Cexp_pair p2 q2) p1 q1 = p1) /\
+   (Cexp_if (Cexp_pair p2 q2) p1 q1 = q1) /\
    (Cexp_if (Cexp_num 0) p1 q1 = q1)`;;
 
 let cexp_fst_def = define
@@ -235,15 +235,6 @@ do_list inferior_overload_interface
 (* Recursive definitions of cexps.                                            *)
 (* -------------------------------------------------------------------------- *)
 
-let cexp_if = prove (
-  `Cexp_if n p q = if ~(n = NUMc 0) then p else q`,
-  COND_CASES_TAC THEN ASM_REWRITE_TAC [cexp_if_def; ONE] THEN
-  POP_ASSUM MP_TAC THEN
-  STRUCT_CASES_TAC (SPEC `n:cval` (cases "cval")) THEN
-  SIMP_TAC [injectivity "cval"; ONE] THEN
-  STRUCT_CASES_TAC (SPEC `a:num` num_CASES) THEN
-  REWRITE_TAC [NOT_SUC; SUC_INJ; cexp_if_def]);;
-
 let cval_size_def = define
   `(cval_size (NUMc n) = 1) /\
    (cval_size (PAIRc p q) = 1 + cval_size p + cval_size q)`;;
@@ -251,3 +242,7 @@ let cval_size_def = define
 let cval_sum_size_def = define
   `(cval_sum_size (NUMc n) = n) /\
    (cval_sum_size (PAIRc p q) = 1 + cval_sum_size p + cval_sum_size q)`;;
+
+(* Note that cv-compute has been available in HOL4 for quite some time now
+   and thus can be a useful resource to consult if something is missing or
+   not working. *)
